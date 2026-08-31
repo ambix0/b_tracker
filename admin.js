@@ -1,32 +1,52 @@
-const cfg=window.BFM_CONFIG,$=s=>document.querySelector(s);
-const KEY="bfm_admin_session";let token=null,refreshToken=null,schemes=[],status=null;
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const cfg=window.BFM_CONFIG;
+const $=s=>document.querySelector(s);
 const todayISO=()=>{const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const m=Object.fromEntries(p.map(x=>[x.type,x.value]));return `${m.year}-${m.month}-${m.day}`};
-const fmt=d=>new Intl.DateTimeFormat("en-IN",{day:"2-digit",month:"short",year:"numeric",timeZone:"Asia/Kolkata"}).format(new Date(d+"T00:00:00"));
-function save(x){localStorage.setItem(KEY,JSON.stringify({access_token:x.access_token,refresh_token:x.refresh_token,expires_at:Date.now()+((x.expires_in||3600)*1000)}));token=x.access_token;refreshToken=x.refresh_token}
-function clear(){localStorage.removeItem(KEY);token=refreshToken=null}
-async function restore(){try{const x=JSON.parse(localStorage.getItem(KEY)||"null");if(!x)return false;if(x.expires_at>Date.now()+60000){token=x.access_token;refreshToken=x.refresh_token;return true}const r=await fetch(`${cfg.SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,{method:"POST",headers:{apikey:cfg.SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:x.refresh_token})});if(!r.ok)throw Error();const y=await r.json();save(y);return true}catch(e){clear();return false}}
-async function login(email,password){const r=await fetch(`${cfg.SUPABASE_URL}/auth/v1/token?grant_type=password`,{method:"POST",headers:{apikey:cfg.SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({email,password})});if(!r.ok)throw Error("Login failed. Check your email/password.");return r.json()}
-async function api(path,opt={}){const h={apikey:cfg.SUPABASE_KEY,Authorization:`Bearer ${token}`,"Content-Type":"application/json",Prefer:"return=representation",...(opt.headers||{})};const r=await fetch(`${cfg.SUPABASE_URL}/rest/v1/${path}`,{...opt,headers:h});if(r.status===401){if(await restore())return api(path,opt);clear();showLogin();throw Error("Session expired. Please log in again.")}if(!r.ok)throw Error(await r.text());return r.status===204?[]:r.json()}
-function showApp(){$("#loginCard").hidden=true;$("#adminApp").hidden=false}
-function showLogin(){$("#loginCard").hidden=false;$("#adminApp").hidden=true}
-$("#loginForm").onsubmit=async e=>{e.preventDefault();try{const x=await login($("#email").value,$("#password").value);save(x);showApp();await refresh()}catch(e){$("#loginMsg").textContent=e.message}}
-$("#logout").onclick=()=>{clear();showLogin()};
-document.querySelectorAll(".status-btn").forEach(b=>b.onclick=()=>{status=b.dataset.status==="true";document.querySelectorAll(".status-btn").forEach(x=>x.classList.remove("selected"));b.classList.add("selected")});
-$("#scheme").onchange=()=>{const s=schemes.find(x=>String(x.id)===$("#scheme").value);$("#mitra").value=s?.jal_mitra_name||""};
-$("#date").value=todayISO();
-$("#updateForm").onsubmit=async e=>{e.preventDefault();if(status===null){$("#saveMsg").textContent="Select ✓ or ✕.";return}try{await api(`bfm_updates?on_conflict=scheme_id,update_date`,{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({scheme_id:Number($("#scheme").value),update_date:$("#date").value,status})});$("#saveMsg").textContent="✓ Saved";await refresh()}catch(e){$("#saveMsg").textContent="Save failed: "+e.message}};
-async function refresh(){schemes=await api("schemes?select=id,scheme_name,jal_mitra_name&order=scheme_name");$("#scheme").innerHTML=schemes.map(s=>`<option value="${s.id}">${esc(s.scheme_name)}</option>`).join("");if(schemes.length)$("#mitra").value=schemes[0].jal_mitra_name;const u=await api("bfm_updates?select=id,scheme_id,update_date,status,created_at&order=created_at.desc&limit=200");const t=todayISO(),today=u.filter(x=>x.update_date===t),yes=today.filter(x=>x.status).length;$("#aTotal").textContent=schemes.length;$("#aUpdated").textContent=yes;$("#aPending").textContent=Math.max(0,schemes.length-yes);$("#aCompletion").textContent=schemes.length?Math.round(yes/schemes.length*100)+"%":"0%";renderSchemes();renderHistory(u);window._updates=u}
-function renderSchemes(){$("#schemeBody").innerHTML=schemes.map(s=>`<tr><td>${esc(s.scheme_name)}</td><td>${esc(s.jal_mitra_name)}</td><td><button class="mini edit" data-id="${s.id}">Edit</button> <button class="mini del" data-id="${s.id}">Delete</button></td></tr>`).join("");document.querySelectorAll(".edit").forEach(b=>b.onclick=editScheme);document.querySelectorAll(".del").forEach(b=>b.onclick=deleteScheme)}
-async function editScheme(){const s=schemes.find(x=>x.id==this.dataset.id);const n=prompt("Scheme name:",s.scheme_name);if(n===null)return;const m=prompt("Jal Mitra:",s.jal_mitra_name);if(m===null)return;try{await api(`schemes?id=eq.${s.id}`,{method:"PATCH",body:JSON.stringify({scheme_name:n.trim(),jal_mitra_name:m.trim()})});await refresh()}catch(e){alert("Could not edit: "+e.message)}}
-async function deleteScheme(){const s=schemes.find(x=>x.id==this.dataset.id);if(!confirm(`Delete ${s.scheme_name}? Its BFM history will also be deleted.`))return;try{await api(`schemes?id=eq.${s.id}`,{method:"DELETE"});await refresh()}catch(e){alert("Could not delete: "+e.message)}}
-$("#schemeForm").onsubmit=async e=>{e.preventDefault();try{await api("schemes",{method:"POST",body:JSON.stringify({scheme_name:$("#newScheme").value.trim(),jal_mitra_name:$("#newMitra").value.trim()})});$("#newScheme").value=$("#newMitra").value="";$("#schemeMsg").textContent="✓ Added";await refresh()}catch(e){$("#schemeMsg").textContent="Could not add: "+e.message}};
-$("#pendingBtn").onclick=async()=>{const u=window._updates||[],t=todayISO(),done=new Set(u.filter(x=>x.update_date===t&&x.status).map(x=>x.scheme_id));$("#pendingList").innerHTML=schemes.filter(s=>!done.has(s.id)).map(s=>`<div class="list-row"><span><b>${esc(s.scheme_name)}</b><small>${esc(s.jal_mitra_name)}</small></span><button class="mini" onclick="document.querySelector('#scheme').value='${s.id}';document.querySelector('#scheme').dispatchEvent(new Event('change'));document.querySelector('#pendingPanel').hidden=true">Update</button></div>`).join("")||'<p class="muted">All schemes are updated today. ✓</p>';$("#pendingPanel").hidden=false};
-$("#historyBtn").onclick=()=>{$("#historyPanel").hidden=false;renderHistory(window._updates||[])};
-function renderHistory(u){const q=($("#historySearch")?.value||"").toLowerCase(),d=$("#historyDate")?.value||"";const rows=u.filter(x=>!d||x.update_date===d).map(x=>{const s=schemes.find(z=>z.id===x.scheme_id);return s&&(`${s.scheme_name} ${s.jal_mitra_name}`.toLowerCase().includes(q))?`<tr><td>${esc(s.scheme_name)}</td><td>${esc(s.jal_mitra_name)}</td><td>${fmt(x.update_date)}</td><td><span class="badge ${x.status?"yes":"no"}">${x.status?"✓":"✕"}</span></td><td><button class="mini" onclick="loadForEdit(${s.id},'${x.update_date}',${x.status})">Edit</button></td></tr>`:""}).join("");$("#historyBody").innerHTML=rows||'<tr><td colspan="5" class="muted center">No records.</td></tr>'}
-window.loadForEdit=(id,d,v)=>{$("#scheme").value=id;$("#scheme").dispatchEvent(new Event("change"));$("#date").value=d;status=v;document.querySelectorAll(".status-btn").forEach(x=>x.classList.toggle("selected",x.dataset.status===String(v)));$("#historyPanel").hidden=true;scrollTo(0,0)};
-$("#historySearch").oninput=()=>renderHistory(window._updates||[]);$("#historyDate").onchange=()=>renderHistory(window._updates||[]);
-document.querySelectorAll(".close-panel").forEach(b=>b.onclick=()=>b.closest(".panel").hidden=true);
-$("#csvBtn").onclick=()=>{const rows=(window._updates||[]).map(x=>{const s=schemes.find(z=>z.id===x.scheme_id);return [s?.scheme_name||"",s?.jal_mitra_name||"",x.update_date,x.status?"UPDATED":"NOT UPDATED"]});const csv=[["Scheme","Jal Mitra","Date","Status"],...rows].map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(",")).join("\\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="BFM_Tracker_Updates.csv";a.click()};
-$("#reportBtn").onclick=()=>{const u=window._updates||[],t=todayISO(),done=new Set(u.filter(x=>x.update_date===t&&x.status).map(x=>x.scheme_id)),pending=schemes.filter(s=>!done.has(s.id));const text=`BFM TRACKER\\nDate: ${fmt(t)}\\n\\nTotal Schemes: ${schemes.length}\\n✓ Updated: ${schemes.length-pending.length}\\n✕ Pending: ${pending.length}\\nCompletion: ${schemes.length?Math.round((schemes.length-pending.length)/schemes.length*100):0}%\\n\\nPENDING:\\n${pending.map((s,i)=>`${i+1}. ${s.scheme_name} — ${s.jal_mitra_name}`).join("\\n")||"None"}`;window.open("https://wa.me/?text="+encodeURIComponent(text),"_blank")};
-(async()=>{if(await restore()){showApp();try{await refresh()}catch(e){clear();showLogin()}}})();
+const fmtDate=d=>new Intl.DateTimeFormat("en-IN",{day:"2-digit",month:"short",year:"numeric",timeZone:"Asia/Kolkata"}).format(new Date(d+"T00:00:00"));
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const SESSION_KEY="bfm_admin_session"; let token=null, refreshToken=null, schemes=[], selectedStatus=null;
+async function api(path,options={},auth=true){
+ const headers={apikey:cfg.SUPABASE_KEY,"Content-Type":"application/json",...(auth&&token?{Authorization:`Bearer ${token}`}:{}),Prefer:"return=representation",...(options.headers||{})};
+ const r=await fetch(`${cfg.SUPABASE_URL}/rest/v1/${path}`,{...options,headers});
+ if(!r.ok) throw new Error(await r.text()); return r.status===204?[]:r.json();
+}
+function saveSession(x){
+ const expiresAt=Math.floor(Date.now()/1000)+(x.expires_in||3600);
+ localStorage.setItem(SESSION_KEY,JSON.stringify({access_token:x.access_token,refresh_token:x.refresh_token,expires_at:expiresAt}));
+ token=x.access_token; refreshToken=x.refresh_token;
+}
+function clearSession(){localStorage.removeItem(SESSION_KEY);token=null;refreshToken=null;}
+async function restoreSession(){
+ const raw=localStorage.getItem(SESSION_KEY); if(!raw)return false;
+ try{
+  const s=JSON.parse(raw); if(!s.refresh_token)return false;
+  if(s.expires_at>Date.now()/1000+60){token=s.access_token;refreshToken=s.refresh_token;return true;}
+  const r=await fetch(`${cfg.SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,{method:"POST",headers:{apikey:cfg.SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:s.refresh_token})});
+  if(!r.ok)throw new Error("Session expired");
+  const x=await r.json(); saveSession(x); return true;
+ }catch(e){clearSession();return false;}
+}
+function showApp(){ $("#loginCard").hidden=true; $("#adminApp").hidden=false; }
+function showLogin(){ $("#adminApp").hidden=true; $("#loginCard").hidden=false; }
+async function login(email,password){
+ const r=await fetch(`${cfg.SUPABASE_URL}/auth/v1/token?grant_type=password`,{method:"POST",headers:{apikey:cfg.SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({email,password})});
+ if(!r.ok) throw new Error("Login failed. Check email/password.");
+ return r.json();
+}
+$("#loginForm").addEventListener("submit",async e=>{e.preventDefault();$("#loginMsg").textContent="";try{const x=await login($("#email").value,$("#password").value);saveSession(x);showApp();$("#date").value=todayISO();await refresh();}catch(err){$("#loginMsg").textContent=err.message;}});
+$("#logout").addEventListener("click",()=>{clearSession();showLogin();});
+document.querySelectorAll(".status-btn").forEach(b=>b.addEventListener("click",()=>{selectedStatus=b.dataset.status==="true";document.querySelectorAll(".status-btn").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");}));
+$("#scheme").addEventListener("change",()=>{const s=schemes.find(x=>String(x.id)===$("#scheme").value);$("#mitra").value=s?.jal_mitra_name||"";});
+$("#updateForm").addEventListener("submit",async e=>{e.preventDefault();if(selectedStatus===null){$("#saveMsg").textContent="Select ✓ or ✕ first.";return;}try{const row={scheme_id:Number($("#scheme").value),update_date:$("#date").value,status:selectedStatus};await api("bfm_updates?on_conflict=scheme_id,update_date",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify(row)});$("#saveMsg").textContent="Saved successfully.";await refresh();}catch(err){$("#saveMsg").textContent="Save failed: "+err.message;}});
+$("#schemeForm").addEventListener("submit",async e=>{e.preventDefault();try{await api("schemes",{method:"POST",body:JSON.stringify({scheme_name:$("#newScheme").value.trim(),jal_mitra_name:$("#newMitra").value.trim()})});$("#newScheme").value="";$("#newMitra").value="";$("#schemeMsg").textContent="Scheme added.";await refresh();}catch(err){$("#schemeMsg").textContent="Could not add: "+err.message;}});
+$("#refresh").addEventListener("click",()=>refresh());
+async function refresh(){
+ schemes=await api("schemes?select=id,scheme_name,jal_mitra_name&order=scheme_name");
+ const updates=await api("bfm_updates?select=scheme_id,update_date,status,created_at&order=created_at.desc&limit=50");
+ $("#scheme").innerHTML=schemes.map(s=>`<option value="${s.id}">${esc(s.scheme_name)}</option>`).join("");
+ if(schemes.length) $("#mitra").value=schemes[0].jal_mitra_name;
+ const today=todayISO(),todays=updates.filter(x=>x.update_date===today),u=todays.filter(x=>x.status).length;
+ $("#aTotal").textContent=schemes.length;$("#aUpdated").textContent=u;$("#aPending").textContent=Math.max(0,schemes.length-u);$("#aCompletion").textContent=schemes.length?Math.round(u/schemes.length*100)+"%":"0%";
+ $("#recent").innerHTML=updates.map(x=>{const s=schemes.find(z=>z.id===x.scheme_id);return `<tr><td>${esc(s?.scheme_name||"")}</td><td>${esc(s?.jal_mitra_name||"")}</td><td>${fmtDate(x.update_date)}</td><td>${x.status?'<span class="badge yes">✓</span>':'<span class="badge no">✕</span>'}</td></tr>`}).join("")||`<tr><td colspan="4" class="muted">No updates yet.</td></tr>`;
+ $("#schemesList").innerHTML=schemes.map(s=>`<tr><td>${esc(s.scheme_name)}</td><td>${esc(s.jal_mitra_name)}</td></tr>`).join("");
+}
+(async function initSession(){ if(cfg.SUPABASE_KEY.includes("REPLACE_"))return; if(await restoreSession()){ showApp(); $("#date").value=todayISO(); try{await refresh();}catch(e){showLogin();} } })();
