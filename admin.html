@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin — AmVio BFM Tracker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div><div class="brand">BFM TRACKER</div><div class="subtitle">BFM Tracker · Admin</div></div>
+  <a class="admin-link" href="index.html">Public Dashboard</a>
+</header>
+
+<main class="container">
+  <section id="loginCard" class="panel narrow">
+    <p class="eyebrow">ADMIN LOGIN</p>
+    <h1>Sign in</h1>
+    <form id="loginForm">
+      <label>Email</label>
+      <input id="email" type="email" required autocomplete="username">
+      <label>Password</label>
+      <input id="password" type="password" required autocomplete="current-password">
+      <button class="primary" type="submit">Login</button>
+      <p id="loginMsg" class="error"></p>
+    </form>
+  </section>
+
+  <section id="adminApp" hidden>
+    <div class="hero">
+      <div><p class="eyebrow">ADMIN PANEL</p><h1>Daily BFM Update</h1><p class="muted">Enter one status per scheme per date.</p></div>
+      <button id="logout" class="secondary">Logout</button>
+    </div>
+
+    <section class="stats">
+      <div class="stat"><span>Total Schemes</span><strong id="aTotal">—</strong></div>
+      <div class="stat"><span>Updated Today</span><strong id="aUpdated">—</strong></div>
+      <div class="stat"><span>Pending Today</span><strong id="aPending">—</strong></div>
+      <div class="stat"><span>Completion</span><strong id="aCompletion">—</strong></div>
+    </section>
+
+    <section class="panel">
+      <form id="updateForm">
+        <div class="grid2">
+          <div><label>Scheme</label><select id="scheme" required></select></div>
+          <div><label>Jal Mitra</label><input id="mitra" readonly></div>
+          <div><label>Date</label><input id="date" type="date" required></div>
+          <div><label>Status</label>
+            <div class="status-buttons">
+              <button type="button" data-status="true" class="status-btn yes">✓ UPDATED</button>
+              <button type="button" data-status="false" class="status-btn no">✕ NOT UPDATED</button>
+            </div>
+          </div>
+        </div>
+        <button class="primary" type="submit">Save Update</button>
+        <span id="saveMsg" class="muted"></span>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="section-head"><div><h2>Recent Updates</h2><p class="muted">Latest saved records.</p></div><button id="refresh" class="secondary">Refresh</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Scheme</th><th>Jal Mitra</th><th>Date</th><th>Status</th></tr></thead><tbody id="recent"></tbody></table></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head"><div><h2>Manage Schemes</h2><p class="muted">Add a scheme and its Jal Mitra.</p></div></div>
+      <form id="schemeForm" class="grid2">
+        <div><label>Scheme Name</label><input id="newScheme" required placeholder="e.g. Uparcharia PWSS"></div>
+        <div><label>Jal Mitra Name</label><input id="newMitra" required placeholder="e.g. Raju"></div>
+        <div><button class="primary" type="submit">+ Add Scheme</button></div>
+        <div><span id="schemeMsg" class="muted"></span></div>
+      </form>
+      <div class="table-wrap"><table><thead><tr><th>Scheme</th><th>Jal Mitra</th></tr></thead><tbody id="schemesList"></tbody></table></div>
+    </section>
+  </section>
+</main>
+<script src="config.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
