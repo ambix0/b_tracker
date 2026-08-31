@@ -3,53 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BFM Tracker</title>
+<title>BFM TRACKER</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="topbar">
-  <div>
-    <div class="brand">BFM TRACKER</div>
-      </div>
-</header>
-
+<header class="topbar"><div class="brand">BFM TRACKER</div><div class="today" id="topDate"></div></header>
 <main class="container">
-  <section class="hero">
-    <div>
-      <p class="eyebrow">PUBLIC DASHBOARD</p>
-      <h1>Bulk Flow Meter Update Status</h1>
-      <p class="muted">Scheme-wise and date-wise Jal Mitra BFM status.</p>
-    </div>
-    <div class="datebox">
-      <span>Today</span>
-      <strong id="today"></strong>
-    </div>
-  </section>
+<section class="hero"><div><div class="eyebrow">PUBLIC DASHBOARD</div><h1>Bulk Flow Meter Status</h1><p class="muted">Scheme-wise Jal Mitra updates</p></div></section>
 
-  <section class="stats">
-    <div class="stat"><span>Total Schemes</span><strong id="total">—</strong></div>
-    <div class="stat"><span>Updated Today</span><strong id="updated">—</strong></div>
-    <div class="stat"><span>Pending Today</span><strong id="pending">—</strong></div>
-    <div class="stat"><span>Completion</span><strong id="completion">—</strong></div>
-  </section>
+<section class="stats">
+<div class="stat"><small>Total Schemes</small><strong id="total">—</strong></div>
+<div class="stat"><small>✓ Updated Today</small><strong id="updated">—</strong></div>
+<div class="stat"><small>✕ Pending Today</small><strong id="pending">—</strong></div>
+<div class="stat"><small>Completion</small><strong id="completion">—</strong></div>
+</section>
 
-  <section class="panel">
-    <label for="search">Search scheme or Jal Mitra</label>
-    <input id="search" placeholder="Type to search...">
-  </section>
+<section class="panel search-panel">
+<input id="search" type="search" placeholder="🔍  Search scheme or Jal Mitra">
+</section>
 
-  <section class="panel table-wrap desktop-table">
-    <table>
-      <thead id="thead"></thead>
-      <tbody id="tbody"><tr><td colspan="20" class="muted center">Loading…</td></tr></tbody>
-    </table>
-  </section>
-
-  <section id="mobileCards" class="mobile-cards" aria-live="polite"></section>
-  <p id="message" class="muted"></p>
+<section class="section-title"><strong>SCHEMES</strong><span id="range" class="muted"></span></section>
+<section id="schemeList"></section>
+<nav class="pagination" id="pagination"></nav>
+<section id="detail" class="detail" hidden></section>
+<p id="message" class="message"></p>
 </main>
-
-<script src="config.js"></script>
-<script src="app.js"></script>
+<script src="config.js"></script><script src="app.js"></script>
 </body>
 </html>
