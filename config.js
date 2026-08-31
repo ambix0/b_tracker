@@ -1,6 +1,6 @@
 // Supabase connection.
 // Paste your Supabase Project URL and Publishable/anon key below.
 window.BFM_CONFIG = {
-  SUPABASE_URL: "PASTE_PROJECT_URL_HERE",
-  SUPABASE_KEY: "PASTE_PUBLISHABLE_KEY_HERE"
+  SUPABASE_URL: "aouxujgadxmhgrlnuqnc.supabase.co",
+  SUPABASE_KEY: "sb_publishable_gHOIE_JkcOXfiw8Ar35-mA_KBu9InFY"
 };
