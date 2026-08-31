@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AmVio BFM Tracker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <div class="brand">AmVio</div>
+    <div class="subtitle">BFM Update Tracker</div>
+  </div>
+  <a class="admin-link" href="admin.html">Admin</a>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">PUBLIC DASHBOARD</p>
+      <h1>Bulk Flow Meter Update Status</h1>
+      <p class="muted">Scheme-wise and date-wise Jal Mitra BFM status.</p>
+    </div>
+    <div class="datebox">
+      <span>Today</span>
+      <strong id="today"></strong>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat"><span>Total Schemes</span><strong id="total">—</strong></div>
+    <div class="stat"><span>Updated Today</span><strong id="updated">—</strong></div>
+    <div class="stat"><span>Pending Today</span><strong id="pending">—</strong></div>
+    <div class="stat"><span>Completion</span><strong id="completion">—</strong></div>
+  </section>
+
+  <section class="panel">
+    <label for="search">Search scheme or Jal Mitra</label>
+    <input id="search" placeholder="Type to search...">
+  </section>
+
+  <section class="panel table-wrap">
+    <table>
+      <thead id="thead"></thead>
+      <tbody id="tbody"><tr><td colspan="20" class="muted center">Loading…</td></tr></tbody>
+    </table>
+  </section>
+  <p id="message" class="muted"></p>
+</main>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
