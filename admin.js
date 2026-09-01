@@ -25,6 +25,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({
 
 let token = null;
 let schemes = [];
+let updates = [];
 let selectedStatus = null;
 let editingSchemeId = null;
 
@@ -101,7 +102,7 @@ async function refresh() {
     "schemes?select=id,scheme_name,person_type,person_name&order=scheme_name"
   );
 
-  const updates = await api(
+  updates = await api(
     "bfm_updates?select=scheme_id,update_date,status,created_at&order=created_at.desc&limit=50"
   );
 
@@ -115,6 +116,8 @@ async function refresh() {
     $("#personType").value = "";
     $("#personName").value = "";
   }
+
+  loadExistingStatus();
 
   const today = todayISO();
   const todays = updates.filter(x => x.update_date === today);
@@ -232,7 +235,38 @@ document.querySelectorAll(".status-btn").forEach(b => {
   });
 });
 
-$("#scheme").addEventListener("change", updatePersonFields);
+function loadExistingStatus() {
+  const schemeId = Number($("#scheme").value);
+  const date = $("#date").value;
+
+  resetStatus();
+
+  if (!schemeId || !date) return;
+
+  const existing = updates.find(
+    x => Number(x.scheme_id) === schemeId && x.update_date === date
+  );
+
+  if (existing) {
+    selectedStatus = existing.status;
+    document.querySelectorAll(".status-btn").forEach(x => {
+      x.classList.toggle(
+        "selected",
+        x.dataset.status === String(existing.status)
+      );
+    });
+    $("#saveMsg").textContent = "Existing status loaded. You can change it.";
+  } else {
+    $("#saveMsg").textContent = "";
+  }
+}
+
+$("#scheme").addEventListener("change", () => {
+  updatePersonFields();
+  loadExistingStatus();
+});
+
+$("#date").addEventListener("change", loadExistingStatus);
 
 $("#updateForm").addEventListener("submit", async e => {
   e.preventDefault();
