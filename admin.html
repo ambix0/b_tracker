@@ -62,6 +62,7 @@
           <div class="person-info">
             <div class="person-line"><span>Person</span><strong id="personName">—</strong></div>
             <div class="person-line"><span>Type</span><strong id="personType">—</strong></div>
+            <div class="person-line"><span>BFM</span><strong id="bfmStatus">—</strong></div>
           </div>
           <div>
             <label>Status</label>
@@ -115,6 +116,13 @@
           <label for="newPersonName">Person Name</label>
           <input id="newPersonName" required placeholder="e.g. Kiran Rabha">
         </div>
+        <div>
+          <label for="newBfmStatus">BFM Status</label>
+          <select id="newBfmStatus" required>
+            <option value="Functional">Functional</option>
+            <option value="Dysfunctional">Dysfunctional</option>
+          </select>
+        </div>
         <div class="form-actions">
           <button id="schemeSubmit" class="primary" type="submit">＋ Add Scheme</button>
           <button id="cancelEdit" class="secondary" type="button" hidden>Cancel</button>
@@ -125,7 +133,7 @@
       <div id="schemeCards" class="admin-mobile-list"></div>
       <div class="desktop-table table-wrap">
         <table>
-          <thead><tr><th>Scheme</th><th>Person Type</th><th>Person Name</th><th>Action</th></tr></thead>
+          <thead><tr><th>Scheme</th><th>Person Type</th><th>Person Name</th><th>BFM Status</th><th>Action</th></tr></thead>
           <tbody id="schemesList"></tbody>
         </table>
       </div>
