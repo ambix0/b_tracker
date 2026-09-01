@@ -3,11 +3,118 @@ const $=s=>document.querySelector(s);
 const todayISO=()=>{const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const m=Object.fromEntries(p.map(x=>[x.type,x.value]));return `${m.year}-${m.month}-${m.day}`};
 const fmtDate=d=>new Intl.DateTimeFormat("en-IN",{day:"2-digit",month:"short",year:"numeric",timeZone:"Asia/Kolkata"}).format(new Date(`${d}T00:00:00`));
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let token=null,schemes=[],updates=[],selectedStatus=null,editingSchemeId=null;
+let token=null,refreshToken=null,schemes=[],updates=[],selectedStatus=null,editingSchemeId=null;
 
-async function api(path,options={},auth=true){const headers={apikey:cfg.SUPABASE_KEY,"Content-Type":"application/json",Prefer:"return=representation",...(auth&&token?{Authorization:`Bearer ${token}`}:{}) ,...(options.headers||{})};const r=await fetch(`${cfg.SUPABASE_URL}/rest/v1/${path}`,{...options,headers});if(!r.ok)throw new Error(await r.text());return r.status===204?[]:r.json()}
-async function login(email,password){const r=await fetch(`${cfg.SUPABASE_URL}/auth/v1/token?grant_type=password`,{method:"POST",headers:{apikey:cfg.SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({email,password})});if(!r.ok)throw new Error("Login failed. Check email/password.");return r.json()}
-async function logoutSupabase(){if(!token)return;try{await fetch(`${cfg.SUPABASE_URL}/auth/v1/logout`,{method:"POST",headers:{apikey:cfg.SUPABASE_KEY,Authorization:`Bearer ${token}`})}catch(_){}}
+const SESSION_KEY="bfm_admin_session";
+
+function saveSession(session){
+  const data={
+    access_token:session.access_token,
+    refresh_token:session.refresh_token,
+    expires_at:session.expires_at || Math.floor(Date.now()/1000)+(session.expires_in||3600)
+  };
+  localStorage.setItem(SESSION_KEY,JSON.stringify(data));
+  token=data.access_token;
+  refreshToken=data.refresh_token;
+}
+
+function clearSession(){
+  localStorage.removeItem(SESSION_KEY);
+  token=null;
+  refreshToken=null;
+}
+
+function showAdmin(){
+  $("#loginCard").hidden=true;
+  $("#adminApp").hidden=false;
+  $("#logout").hidden=false;
+}
+
+function showLogin(){
+  $("#adminApp").hidden=true;
+  $("#loginCard").hidden=false;
+  $("#logout").hidden=true;
+}
+
+async function refreshAuthSession(){
+  const raw=localStorage.getItem(SESSION_KEY);
+  if(!raw)return false;
+
+  let session;
+  try{session=JSON.parse(raw)}catch(_){clearSession();return false}
+
+  const now=Math.floor(Date.now()/1000);
+  if(session.access_token && session.expires_at && session.expires_at > now+60){
+    token=session.access_token;
+    refreshToken=session.refresh_token;
+    return true;
+  }
+
+  if(!session.refresh_token){
+    clearSession();
+    return false;
+  }
+
+  try{
+    const r=await fetch(`${cfg.SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,{
+      method:"POST",
+      headers:{apikey:cfg.SUPABASE_KEY,"Content-Type":"application/json"},
+      body:JSON.stringify({refresh_token:session.refresh_token})
+    });
+    if(!r.ok)throw new Error("Session expired");
+    const next=await r.json();
+    saveSession(next);
+    return true;
+  }catch(_){
+    clearSession();
+    return false;
+  }
+}
+
+async function api(path,options={},auth=true){
+  if(auth && !token)throw new Error("Not authenticated");
+  const headers={
+    apikey:cfg.SUPABASE_KEY,
+    "Content-Type":"application/json",
+    Prefer:"return=representation",
+    ...(auth&&token?{Authorization:`Bearer ${token}`}:{})
+    ,...(options.headers||{})
+  };
+  const r=await fetch(`${cfg.SUPABASE_URL}/rest/v1/${path}`,{...options,headers});
+  if(r.status===401 && auth){
+    const ok=await refreshAuthSession();
+    if(ok){
+      headers.Authorization=`Bearer ${token}`;
+      const retry=await fetch(`${cfg.SUPABASE_URL}/rest/v1/${path}`,{...options,headers});
+      if(!retry.ok)throw new Error(await retry.text());
+      return retry.status===204?[]:retry.json();
+    }
+  }
+  if(!r.ok)throw new Error(await r.text());
+  return r.status===204?[]:r.json();
+}
+
+async function login(email,password){
+  const r=await fetch(`${cfg.SUPABASE_URL}/auth/v1/token?grant_type=password`,{
+    method:"POST",
+    headers:{apikey:cfg.SUPABASE_KEY,"Content-Type":"application/json"},
+    body:JSON.stringify({email,password})
+  });
+  if(!r.ok)throw new Error("Login failed. Check email/password.");
+  return r.json();
+}
+
+async function logoutSupabase(){
+  if(!token)return;
+  try{
+    await fetch(`${cfg.SUPABASE_URL}/auth/v1/logout`,{
+      method:"POST",
+      headers:{apikey:cfg.SUPABASE_KEY,Authorization:`Bearer ${token}`}
+    });
+  }catch(_){}
+  clearSession();
+}
+
 function resetStatus(){selectedStatus=null;document.querySelectorAll(".status-btn").forEach(x=>x.classList.remove("selected"))}
 function resetSchemeForm(){editingSchemeId=null;$("#newScheme").value="";$("#newPersonName").value="";$("#newPersonType").value="Swajal Mitra";$("#schemeSubmit").textContent="＋ Add Scheme";$("#cancelEdit").hidden=true}
 function updatePersonFields(){const s=schemes.find(x=>String(x.id)===$("#scheme").value);$("#personName").textContent=s?.person_name||"—";$("#personType").textContent=s?.person_type||"—"}
@@ -31,8 +138,46 @@ async function refresh(){
 function startEdit(id){const s=schemes.find(x=>x.id===id);if(!s)return;editingSchemeId=id;$("#newScheme").value=s.scheme_name;$("#newPersonType").value=s.person_type;$("#newPersonName").value=s.person_name;$("#schemeSubmit").textContent="Save Changes";$("#cancelEdit").hidden=false;$("#schemeMsg").textContent="Editing selected scheme.";$("#newScheme").focus()}
 async function deleteScheme(id){const s=schemes.find(x=>x.id===id);if(!s)return;if(!confirm(`Delete "${s.scheme_name}"?\n\nExisting BFM records may prevent deletion.`))return;try{await api(`schemes?id=eq.${id}`,{method:"DELETE"});$("#schemeMsg").textContent="Scheme deleted.";if(editingSchemeId===id)resetSchemeForm();await refresh()}catch(e){$("#schemeMsg").textContent="Could not delete. Existing BFM records may be linked to this scheme."}}
 
-$("#loginForm").addEventListener("submit",async e=>{e.preventDefault();$("#loginMsg").textContent="";try{const x=await login($("#email").value.trim(),$("#password").value);token=x.access_token;$("#loginCard").hidden=true;$("#adminApp").hidden=false;$("#date").value=todayISO();resetStatus();await refresh()}catch(err){$("#loginMsg").textContent=err.message}});
-$("#logout").addEventListener("click",async()=>{await logoutSupabase();token=null;$("#adminApp").hidden=true;$("#loginCard").hidden=false;$("#password").value="";resetStatus()});
+$("#loginForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  $("#loginMsg").textContent="";
+  try{
+    const x=await login($("#email").value.trim(),$("#password").value);
+    saveSession(x);
+    showAdmin();
+    $("#date").value=todayISO();
+    resetStatus();
+    await refresh();
+  }catch(err){
+    clearSession();
+    showLogin();
+    $("#loginMsg").textContent=err.message;
+  }
+});
+
+$("#logout").addEventListener("click",async()=>{
+  await logoutSupabase();
+  $("#password").value="";
+  resetStatus();
+  showLogin();
+});
+
+(async function restoreSession(){
+  const ok=await refreshAuthSession();
+  if(!ok){
+    showLogin();
+    return;
+  }
+  showAdmin();
+  $("#date").value=todayISO();
+  try{
+    await refresh();
+  }catch(err){
+    clearSession();
+    showLogin();
+    $("#loginMsg").textContent="Your session could not be restored. Please log in again.";
+  }
+})();
 document.querySelectorAll(".status-btn").forEach(b=>b.addEventListener("click",()=>{selectedStatus=b.dataset.status==="true";document.querySelectorAll(".status-btn").forEach(x=>x.classList.remove("selected"));b.classList.add("selected")}));
 $("#scheme").addEventListener("change",()=>{updatePersonFields();loadExistingStatus()});
 $("#date").addEventListener("change",loadExistingStatus);
