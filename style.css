@@ -387,3 +387,8 @@ button {
     text-align: center !important;
   }
 }
+
+.primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
