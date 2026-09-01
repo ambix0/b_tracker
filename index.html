@@ -1,17 +1,19 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AmVio BFM Tracker</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#172033">
+  <title>AmVio BFM Tracker</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="topbar">
   <div>
-    <div class="brand">BFM TRACKER</div>
+    <div class="brand">AmVio</div>
     <div class="subtitle">BFM Update Tracker</div>
   </div>
+  <a class="admin-link" href="admin.html">Admin</a>
 </header>
 
 <main class="container">
@@ -19,11 +21,11 @@
     <div>
       <p class="eyebrow">PUBLIC DASHBOARD</p>
       <h1>Bulk Flow Meter Update Status</h1>
-      <p class="muted">Scheme-wise and date-wise Jal Mitra BFM status.</p>
+      <p class="muted">Scheme-wise and date-wise update status.</p>
     </div>
     <div class="datebox">
       <span>Today</span>
-      <strong id="today"></strong>
+      <strong id="today">—</strong>
     </div>
   </section>
 
@@ -34,19 +36,35 @@
     <div class="stat"><span>Completion</span><strong id="completion">—</strong></div>
   </section>
 
-  <section class="panel">
-    <label for="search">Search scheme or Jal Mitra</label>
-    <input id="search" placeholder="Type to search...">
+  <section class="panel filters">
+    <div class="filter-search">
+      <label for="search">Search scheme or person</label>
+      <input id="search" placeholder="Type to search..." autocomplete="off">
+    </div>
+    <div class="type-filter">
+      <label for="typeFilter">Person Type</label>
+      <select id="typeFilter">
+        <option value="">All</option>
+        <option value="Swajal Mitra">Swajal Mitra</option>
+        <option value="Jal Sahayak">Jal Sahayak</option>
+      </select>
+    </div>
   </section>
 
-  <section class="panel table-wrap desktop-table">
-    <table>
-      <thead id="thead"></thead>
-      <tbody id="tbody"><tr><td colspan="20" class="muted center">Loading…</td></tr></tbody>
-    </table>
+  <section class="panel table-panel">
+    <div class="desktop-table table-wrap">
+      <table>
+        <thead id="thead"></thead>
+        <tbody id="tbody">
+          <tr><td colspan="20" class="center muted">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="cards" class="scheme-cards"></div>
   </section>
 
-  <section id="mobileCards" class="mobile-cards" aria-live="polite"></section>
+  <div id="pagination" class="pagination"></div>
   <p id="message" class="muted"></p>
 </main>
 

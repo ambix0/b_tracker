@@ -3,28 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>Admin — BFM Tracker</title>
+  <meta name="theme-color" content="#172033">
+  <title>Admin — AmVio BFM Tracker</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="topbar">
   <div>
-    <div class="brand">BFM TRACKER</div>
-    <div class="subtitle">Admin Portal</div>
+    <div class="brand">AmVio</div>
+    <div class="subtitle">BFM Tracker · Admin</div>
   </div>
-  <a class="admin-link" href="index.html">Dashboard</a>
+  <a class="admin-link" href="index.html">Public Dashboard</a>
 </header>
 
 <main class="container">
   <section id="loginCard" class="panel narrow">
-    <p class="eyebrow">AUTHENTICATION</p>
-    <h1>Sign In</h1>
+    <p class="eyebrow">ADMIN LOGIN</p>
+    <h1>Sign in</h1>
     <form id="loginForm">
       <label for="email">Email</label>
-      <input id="email" type="email" required autocomplete="username" placeholder="admin@domain.com">
+      <input id="email" type="email" required autocomplete="username">
       <label for="password">Password</label>
-      <input id="password" type="password" required autocomplete="current-password" placeholder="••••••••">
-      <button class="primary" type="submit">Sign In</button>
+      <input id="password" type="password" required autocomplete="current-password">
+      <button class="primary full" type="submit">Login</button>
       <p id="loginMsg" class="error"></p>
     </form>
   </section>
@@ -34,36 +35,47 @@
       <div>
         <p class="eyebrow">ADMIN PANEL</p>
         <h1>Daily BFM Update</h1>
+        <p class="muted">Enter one status per scheme per date.</p>
       </div>
       <button id="logout" class="secondary">Logout</button>
     </div>
 
     <section class="stats">
-      <div class="stat"><span>Total</span><strong id="aTotal">—</strong></div>
-      <div class="stat"><span>Updated</span><strong id="aUpdated">—</strong></div>
-      <div class="stat"><span>Pending</span><strong id="aPending">—</strong></div>
-      <div class="stat"><span>Progress</span><strong id="aCompletion">—</strong></div>
+      <div class="stat"><span>Total Schemes</span><strong id="aTotal">—</strong></div>
+      <div class="stat"><span>Updated Today</span><strong id="aUpdated">—</strong></div>
+      <div class="stat"><span>Pending Today</span><strong id="aPending">—</strong></div>
+      <div class="stat"><span>Completion</span><strong id="aCompletion">—</strong></div>
     </section>
 
     <section class="panel">
       <form id="updateForm">
-        <label for="scheme">Select Scheme</label>
-        <select id="scheme" required></select>
-
-        <label for="mitra">Jal Mitra</label>
-        <input id="mitra" readonly>
-
-        <label for="date">Update Date</label>
-        <input id="date" type="date" required>
-
-        <label>Status</label>
-        <div class="status-buttons">
-          <button type="button" data-status="true" class="status-btn yes">✓ UPDATED</button>
-          <button type="button" data-status="false" class="status-btn no">✕ NOT UPDATED</button>
+        <div class="grid2">
+          <div>
+            <label for="scheme">Scheme</label>
+            <select id="scheme" required></select>
+          </div>
+          <div>
+            <label for="personType">Person Type</label>
+            <input id="personType" readonly>
+          </div>
+          <div>
+            <label for="personName">Person Name</label>
+            <input id="personName" readonly>
+          </div>
+          <div>
+            <label for="date">Date</label>
+            <input id="date" type="date" required>
+          </div>
+          <div class="full-width">
+            <label>Status</label>
+            <div class="status-buttons">
+              <button type="button" data-status="true" class="status-btn yes">✓ UPDATED</button>
+              <button type="button" data-status="false" class="status-btn no">✕ NOT UPDATED</button>
+            </div>
+          </div>
         </div>
-
         <button class="primary" type="submit">Save Update</button>
-        <div id="saveMsg" class="muted" style="margin-top: 10px; font-size: 13px;"></div>
+        <span id="saveMsg" class="muted"></span>
       </form>
     </section>
 
@@ -71,33 +83,61 @@
       <div class="section-head">
         <div>
           <h2>Recent Updates</h2>
+          <p class="muted">Latest saved records.</p>
         </div>
         <button id="refresh" class="secondary">Refresh</button>
       </div>
-      <div id="recentUpdatesList" class="admin-card-list"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Scheme</th><th>Person</th><th>Type</th><th>Date</th><th>Status</th></tr>
+          </thead>
+          <tbody id="recent"></tbody>
+        </table>
+      </div>
     </section>
 
     <section class="panel">
       <div class="section-head">
         <div>
           <h2>Manage Schemes</h2>
+          <p class="muted">Each scheme has one assigned person.</p>
         </div>
       </div>
+
       <form id="schemeForm" class="grid2">
         <div>
           <label for="newScheme">Scheme Name</label>
           <input id="newScheme" required placeholder="e.g. Uparcharia PWSS">
         </div>
         <div>
-          <label for="newMitra">Jal Mitra Name</label>
-          <input id="newMitra" required placeholder="e.g. Raju">
+          <label for="newPersonType">Person Type</label>
+          <select id="newPersonType" required>
+            <option value="Swajal Mitra">Swajal Mitra</option>
+            <option value="Jal Sahayak">Jal Sahayak</option>
+          </select>
         </div>
-        <div style="grid-column: 1 / -1;">
-          <button class="primary" type="submit">+ Add Scheme</button>
-          <div id="schemeMsg" class="muted" style="margin-top: 8px; font-size: 13px;"></div>
+        <div>
+          <label for="newPersonName">Person Name</label>
+          <input id="newPersonName" required placeholder="e.g. Kiran Rabha">
+        </div>
+        <div class="form-actions">
+          <button id="schemeSubmit" class="primary" type="submit">+ Add Scheme</button>
+          <button id="cancelEdit" class="secondary" type="button" hidden>Cancel</button>
+        </div>
+        <div class="full-width">
+          <span id="schemeMsg" class="muted"></span>
         </div>
       </form>
-      <div id="schemesListMobile" class="admin-card-list" style="margin-top: 14px;"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Scheme</th><th>Person Type</th><th>Person Name</th><th>Action</th></tr>
+          </thead>
+          <tbody id="schemesList"></tbody>
+        </table>
+      </div>
     </section>
   </section>
 </main>
