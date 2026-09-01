@@ -3,23 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#172033">
-  <title>Admin — AmVio BFM Tracker</title>
+  <meta name="theme-color" content="#123b72">
+  <title>BFM Tracker — Admin</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-<header class="topbar">
+<body class="admin-page">
+<header class="topbar admin-topbar">
   <div>
-    <div class="brand">AmVio</div>
-    <div class="subtitle">BFM Tracker · Admin</div>
+    <div class="brand">BFM Tracker <span>(Admin)</span></div>
+    <div class="subtitle">Daily BFM administration</div>
   </div>
-  <a class="admin-link" href="index.html">Public Dashboard</a>
+  <button id="logout" class="header-btn">↪ Logout</button>
 </header>
 
 <main class="container">
-  <section id="loginCard" class="panel narrow">
+  <section id="loginCard" class="panel narrow login-panel">
     <p class="eyebrow">ADMIN LOGIN</p>
     <h1>Sign in</h1>
+    <p class="muted">Use your authorized Supabase account.</p>
     <form id="loginForm">
       <label for="email">Email</label>
       <input id="email" type="email" required autocomplete="username">
@@ -31,67 +32,62 @@
   </section>
 
   <section id="adminApp" hidden>
-    <div class="hero">
-      <div>
-        <p class="eyebrow">ADMIN PANEL</p>
-        <h1>Daily BFM Update</h1>
-        <p class="muted">Enter one status per scheme per date.</p>
-      </div>
-      <button id="logout" class="secondary">Logout</button>
-    </div>
-
-    <section class="stats">
-      <div class="stat"><span>Total Schemes</span><strong id="aTotal">—</strong></div>
-      <div class="stat"><span>Updated Today</span><strong id="aUpdated">—</strong></div>
-      <div class="stat"><span>Pending Today</span><strong id="aPending">—</strong></div>
-      <div class="stat"><span>Completion</span><strong id="aCompletion">—</strong></div>
+    <section class="admin-date">
+      <span>📅 Today</span>
+      <strong id="adminToday">—</strong>
     </section>
 
-    <section class="panel">
+    <section class="stats compact-stats">
+      <div class="stat stat-total"><span>Total Schemes</span><strong id="aTotal">—</strong></div>
+      <div class="stat stat-updated"><span>Updated Today</span><strong id="aUpdated">—</strong></div>
+      <div class="stat stat-pending"><span>Pending Today</span><strong id="aPending">—</strong></div>
+      <div class="stat stat-completion"><span>Completion</span><strong id="aCompletion">—</strong></div>
+    </section>
+
+    <section class="panel action-panel">
+      <div class="section-title">
+        <div><span class="section-icon">▣</span><div><h2>Daily BFM Update</h2><p class="muted">Update one scheme for one date.</p></div></div>
+      </div>
+
       <form id="updateForm">
-        <div class="grid2">
+        <div class="update-grid">
           <div>
             <label for="scheme">Scheme</label>
             <select id="scheme" required></select>
           </div>
           <div>
-            <label for="personType">Person Type</label>
-            <input id="personType" readonly>
-          </div>
-          <div>
-            <label for="personName">Person Name</label>
-            <input id="personName" readonly>
-          </div>
-          <div>
             <label for="date">Date</label>
             <input id="date" type="date" required>
           </div>
-          <div class="full-width">
+          <div class="person-info">
+            <div class="person-line"><span>Person</span><strong id="personName">—</strong></div>
+            <div class="person-line"><span>Type</span><strong id="personType">—</strong></div>
+          </div>
+          <div>
             <label>Status</label>
             <div class="status-buttons">
               <button type="button" data-status="true" class="status-btn yes">✓ UPDATED</button>
               <button type="button" data-status="false" class="status-btn no">✕ NOT UPDATED</button>
             </div>
           </div>
+          <div class="full-width">
+            <button class="save-btn" type="submit">▣ &nbsp; SAVE UPDATE</button>
+            <p id="saveMsg" class="form-message"></p>
+          </div>
         </div>
-        <button class="primary" type="submit">Save Update</button>
-        <span id="saveMsg" class="muted"></span>
       </form>
+      <div class="hint">ⓘ Selecting a date loads the existing status, if any.</div>
     </section>
 
     <section class="panel">
       <div class="section-head">
-        <div>
-          <h2>Recent Updates</h2>
-          <p class="muted">Latest saved records.</p>
-        </div>
-        <button id="refresh" class="secondary">Refresh</button>
+        <div class="section-heading"><span class="section-icon">◴</span><div><h2>Recent Updates</h2><p class="muted">Latest saved records.</p></div></div>
+        <button id="refresh" class="secondary">↻ Refresh</button>
       </div>
-      <div class="table-wrap">
+      <div id="recentCards" class="admin-mobile-list"></div>
+      <div class="desktop-table table-wrap">
         <table>
-          <thead>
-            <tr><th>Scheme</th><th>Person</th><th>Type</th><th>Date</th><th>Status</th></tr>
-          </thead>
+          <thead><tr><th>Scheme</th><th>Person</th><th>Type</th><th>Date</th><th>Status</th></tr></thead>
           <tbody id="recent"></tbody>
         </table>
       </div>
@@ -99,13 +95,11 @@
 
     <section class="panel">
       <div class="section-head">
-        <div>
-          <h2>Manage Schemes</h2>
-          <p class="muted">Each scheme has one assigned person.</p>
-        </div>
+        <div class="section-heading"><span class="section-icon">▦</span><div><h2>Manage Schemes</h2><p class="muted">One assigned person per scheme.</p></div></div>
+        <button id="addSchemeTop" class="primary">＋ Add New Scheme</button>
       </div>
 
-      <form id="schemeForm" class="grid2">
+      <form id="schemeForm" class="grid2 scheme-form">
         <div>
           <label for="newScheme">Scheme Name</label>
           <input id="newScheme" required placeholder="e.g. Uparcharia PWSS">
@@ -122,23 +116,22 @@
           <input id="newPersonName" required placeholder="e.g. Kiran Rabha">
         </div>
         <div class="form-actions">
-          <button id="schemeSubmit" class="primary" type="submit">+ Add Scheme</button>
+          <button id="schemeSubmit" class="primary" type="submit">＋ Add Scheme</button>
           <button id="cancelEdit" class="secondary" type="button" hidden>Cancel</button>
         </div>
-        <div class="full-width">
-          <span id="schemeMsg" class="muted"></span>
-        </div>
+        <div class="full-width"><span id="schemeMsg" class="muted"></span></div>
       </form>
 
-      <div class="table-wrap">
+      <div id="schemeCards" class="admin-mobile-list"></div>
+      <div class="desktop-table table-wrap">
         <table>
-          <thead>
-            <tr><th>Scheme</th><th>Person Type</th><th>Person Name</th><th>Action</th></tr>
-          </thead>
+          <thead><tr><th>Scheme</th><th>Person Type</th><th>Person Name</th><th>Action</th></tr></thead>
           <tbody id="schemesList"></tbody>
         </table>
       </div>
     </section>
+
+    <div class="admin-footer">⌾ You are logged in as Admin</div>
   </section>
 </main>
 
