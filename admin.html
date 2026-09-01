@@ -1,19 +1,96 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#123b72"><title>BFM Tracker Admin</title><link rel="stylesheet" href="style.css"></head>
-<body class="admin-page admin-auth-locked">
-<header class="admin-mobile-header"><button class="menu-btn" type="button">☰</button><div class="admin-brand"><span class="admin-drop">💧</span><div><strong>BFM Tracker Admin</strong><small>Manage schemes and daily updates</small></div></div><button id="addSchemeTop" class="add-icon" type="button">＋</button></header>
-<header class="admin-desktop-header"><div><div class="brand">BFM Tracker <span>(Admin)</span></div><div class="subtitle">Manage schemes and daily updates</div></div><button id="logout" class="header-btn" hidden>↪ Logout</button></header>
-<div class="admin-shell">
-<aside class="admin-sidebar"><div class="side-logo">💧 <strong>BFM</strong><small>Tracker Admin</small></div><nav><a class="active">⌂ <span>Dashboard</span></a><a href="#schemeSection">▤ <span>Scheme List</span></a><a href="#updateSection">▣ <span>Daily Update</span></a><a href="#schemeSection">♙ <span>Jal Mitra / Person</span></a></nav><div class="side-bottom"><button id="sideLogout">↪ Logout</button></div></aside>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Admin — BFM Tracker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="admin-page">
+<header class="admin-header">
+  <div class="brand-row"><span class="water">💧</span><div><div class="brand">BFM Tracker</div><div class="subtitle">Admin Panel</div></div></div>
+  <a href="index.html" class="admin-link">Dashboard</a>
+</header>
+
 <main class="admin-main">
-<section id="loginCard" class="panel narrow login-panel"><p class="eyebrow">ADMIN LOGIN</p><h1>Sign in</h1><p class="muted">Use your authorized Supabase account.</p><form id="loginForm"><label for="email">Email</label><input id="email" type="email" required autocomplete="username"><label for="password">Password</label><input id="password" type="password" required autocomplete="current-password"><button class="primary full" type="submit">Login</button><p id="loginMsg" class="error"></p></form></section>
+<section id="loginCard" class="login-card">
+  <div class="eyebrow">ADMIN ACCESS</div>
+  <h1>Sign In</h1>
+  <p class="muted">Sign in to manage schemes and daily BFM updates.</p>
+  <form id="loginForm">
+    <label>Email</label><input id="email" type="email" required autocomplete="username">
+    <label>Password</label><input id="password" type="password" required autocomplete="current-password">
+    <button class="primary wide" type="submit">Sign In</button>
+    <div id="loginMsg" class="error"></div>
+  </form>
+</section>
+
 <section id="adminApp" hidden>
-<div class="admin-page-title"><div><p class="eyebrow">ADMIN DASHBOARD</p><h1>Manage Schemes</h1><p class="muted">Add, view and manage all schemes</p></div><button id="addSchemeTitle" class="primary">＋ Add New Scheme</button></div>
-<section class="stats admin-stats"><div class="stat"><div class="stat-icon">☷</div><span>Total Schemes</span><strong id="aTotal">—</strong><small>All schemes</small></div><div class="stat stat-updated"><div class="stat-icon">✓</div><span>Functional BFM</span><strong id="aFunctional">—</strong><small>Active schemes</small></div><div class="stat stat-pending"><div class="stat-icon">✕</div><span>Dysfunctional BFM</span><strong id="aDysfunctional">—</strong><small>Inactive schemes</small></div><div class="stat stat-completion"><div class="stat-icon">♙</div><span>Total Persons</span><strong id="aPersons">—</strong><small>Assigned persons</small></div></section>
-<section id="schemeSection" class="panel scheme-management"><div class="section-head"><div><h2>Schemes</h2><p class="muted">One assigned person per scheme.</p></div></div><div class="scheme-toolbar"><div class="search-box"><span>⌕</span><input id="schemeSearch" placeholder="Search scheme or person..." autocomplete="off"></div><select id="statusFilter"><option value="">All Status</option><option value="Functional">Functional</option><option value="Dysfunctional">Dysfunctional</option></select><select id="typeFilter"><option value="">All Type</option><option value="Swajal Mitra">Swajal Mitra</option><option value="Jal Sahayak">Jal Sahayak</option></select></div><div class="scheme-list-head"><strong id="schemeCount">Schemes</strong><button id="sortScheme" class="text-btn">Sort ↕</button></div><div id="schemeCards" class="admin-scheme-cards"></div><div class="desktop-table table-wrap"><table><thead><tr><th>#</th><th>Scheme Name</th><th>Person Name</th><th>Type</th><th>BFM Status</th><th>Action</th></tr></thead><tbody id="schemesList"></tbody></table></div><div id="schemePagination" class="pagination admin-pagination"></div></section>
-<section id="updateSection" class="panel action-panel"><div class="section-head"><div><h2>Daily BFM Update</h2><p class="muted">Update today's BFM status for a scheme.</p></div><div class="datebox"><span>Today</span><strong id="adminToday">—</strong></div></div><form id="updateForm"><div class="update-grid"><div><label for="scheme">Select Scheme</label><select id="scheme" required></select></div><div><label for="date">Date</label><input id="date" type="date" required></div><div class="bfm-choice"><label>BFM Status</label><div class="condition-buttons"><button type="button" data-bfm="Functional" class="condition-btn functional">✓ Functional</button><button type="button" data-bfm="Dysfunctional" class="condition-btn dysfunctional">✕ Dysfunctional</button></div></div><div><label>Status</label><div class="status-buttons"><button type="button" data-status="true" class="status-btn yes">✓ UPDATED</button><button type="button" data-status="false" class="status-btn no">✕ NOT UPDATED</button></div></div><div class="selected-details full-width"><div class="detail-heading">ⓘ Selected Details</div><div class="detail-grid"><div><small>Jal Mitra / Person</small><strong id="personName">—</strong></div><div><small>Type</small><strong id="personType">—</strong></div><div><small>Current BFM Status</small><strong id="currentBfmStatus">—</strong></div></div></div><div class="full-width"><button class="save-btn" type="submit">▣ &nbsp; SAVE UPDATE</button><p id="saveMsg" class="form-message"></p></div></div></form><div class="seven-title">Update 7 Days Status</div><div id="sevenDays" class="seven-days"></div></section>
-<section class="panel"><div class="section-head"><div><h2>Recent Updates</h2><p class="muted">Latest saved records.</p></div><button id="refresh" class="secondary">↻ Refresh</button></div><div id="recentCards" class="admin-mobile-list"></div><div class="desktop-table table-wrap"><table><thead><tr><th>Scheme</th><th>Person</th><th>Type</th><th>Date</th><th>Status</th></tr></thead><tbody id="recent"></tbody></table></div></section>
-<section class="panel edit-panel"><div class="section-head"><div><h2>Add / Edit Scheme</h2><p class="muted">Edit the assigned person and BFM functionality.</p></div></div><form id="schemeForm" class="grid2"><div><label for="newScheme">Scheme Name</label><input id="newScheme" required></div><div><label for="newPersonType">Person Type</label><select id="newPersonType" required><option>Swajal Mitra</option><option>Jal Sahayak</option></select></div><div><label for="newPersonName">Person Name</label><input id="newPersonName" required></div><div><label for="newBfmStatus">BFM Status</label><select id="newBfmStatus" required><option>Functional</option><option>Dysfunctional</option></select></div><div class="form-actions full-width"><button id="schemeSubmit" class="primary" type="submit">＋ Add Scheme</button><button id="cancelEdit" class="secondary" type="button" hidden>Cancel</button></div><div class="full-width"><span id="schemeMsg" class="muted"></span></div></form></section>
-</section></main></div>
-<nav class="mobile-bottom-nav"><a href="#">⌂<span>Dashboard</span></a><a href="#schemeSection">▤<span>Scheme List</span></a><a href="#updateSection">▣<span>Daily Update</span></a><a href="#schemeSection">♙<span>Persons</span></a><button id="mobileLogout">↪<span>Logout</span></button></nav>
-<script src="config.js"></script><script src="admin.js"></script></body></html>
+  <div class="admin-title">
+    <div><div class="eyebrow">ADMIN DASHBOARD</div><h1>BFM Management</h1></div>
+    <button id="logout" class="secondary">Logout</button>
+  </div>
+
+  <section class="admin-stats">
+    <div><small>Total Schemes</small><strong id="aTotal">—</strong></div>
+    <div><small>Functional BFM</small><strong id="aFunctional">—</strong></div>
+    <div><small>Dysfunctional BFM</small><strong id="aDysfunctional">—</strong></div>
+    <div><small>Total Persons</small><strong id="aPersons">—</strong></div>
+  </section>
+
+  <section class="panel">
+    <div class="section-head"><div><div class="eyebrow">SCHEMES</div><h2>Scheme Management</h2></div><button id="addSchemeBtn" class="primary">+ Add Scheme</button></div>
+    <input id="schemeSearch" class="filter-input" placeholder="Search scheme or person..." autocomplete="off">
+    <div class="filter-row">
+      <select id="statusFilter"><option value="all">All BFM Status</option><option value="Functional">Functional</option><option value="Dysfunctional">Dysfunctional</option></select>
+      <select id="typeFilter"><option value="all">All Person Types</option><option value="Swajal Mitra">Swajal Mitra</option><option value="Jal Sahayak">Jal Sahayak</option></select>
+    </div>
+    <div id="schemesList" class="admin-card-list"></div>
+    <div class="pagination"><button id="schemePrev">‹</button><span id="schemePageInfo">1 / 1</span><button id="schemeNext">›</button></div>
+  </section>
+
+  <section class="panel">
+    <div class="eyebrow">DAILY UPDATE</div><h2>Daily BFM Update</h2>
+    <form id="updateForm">
+      <label>Scheme</label><select id="scheme" required></select>
+      <div id="selectedPerson" class="person-detail"></div>
+      <label>Date</label><input id="date" type="date" required>
+      <label>BFM Condition</label>
+      <div class="condition-row">
+        <button type="button" class="condition-btn" data-condition="Functional">✓ Functional</button>
+        <button type="button" class="condition-btn" data-condition="Dysfunctional">✕ Dysfunctional</button>
+      </div>
+      <label>Today's Update</label>
+      <div class="condition-row">
+        <button type="button" class="update-status-btn" data-status="true">✓ Updated</button>
+        <button type="button" class="update-status-btn" data-status="false">✕ Not Updated</button>
+      </div>
+      <button class="primary wide" type="submit">Save BFM Update</button>
+      <div id="saveMsg" class="success"></div>
+    </form>
+    <div id="sevenDays" class="seven-days"></div>
+  </section>
+
+  <section class="panel">
+    <div class="section-head"><div><div class="eyebrow">HISTORY</div><h2>Recent Updates</h2></div><button id="refresh" class="secondary">Refresh</button></div>
+    <div id="recentUpdatesList" class="admin-card-list"></div>
+  </section>
+
+  <section id="schemeFormPanel" class="panel" hidden>
+    <div class="eyebrow">SCHEME</div><h2 id="formTitle">Add Scheme</h2>
+    <form id="schemeForm">
+      <input type="hidden" id="editId">
+      <label>Scheme Name</label><input id="newScheme" required>
+      <label>Person Name</label><input id="newPerson" required>
+      <label>Person Type</label><select id="newPersonType"><option>Swajal Mitra</option><option>Jal Sahayak</option></select>
+      <label>BFM Status</label><select id="newBfmStatus"><option>Functional</option><option>Dysfunctional</option></select>
+      <div class="form-actions"><button type="submit" class="primary">Save Scheme</button><button type="button" id="cancelScheme" class="secondary">Cancel</button></div>
+      <div id="schemeMsg" class="success"></div>
+    </form>
+  </section>
+</section>
+</main>
+<script src="config.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

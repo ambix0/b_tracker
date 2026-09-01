@@ -3,32 +3,34 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#123b72">
 <title>BFM Update Tracker</title>
 <link rel="stylesheet" href="style.css">
 </head>
-<body class="public-page">
-<header class="topbar public-topbar">
-  <div class="mobile-menu" aria-hidden="true">☰</div>
-  <div class="brand-block"><div class="brand">BFM Update Tracker</div><div class="subtitle">Bulk Flow Meter daily status</div></div>
-  <div class="water-mark" aria-hidden="true">💧</div>
+<body>
+<header class="public-header">
+  <div class="brand-row"><span class="water">💧</span><div><div class="brand">BFM Update Tracker</div><div class="subtitle">Bulk Flow Meter daily status</div></div></div>
+  <a href="admin.html" class="admin-link">Admin</a>
 </header>
-<main class="container public-container">
-  <section class="hero public-hero">
-    <div><p class="eyebrow">DAILY STATUS</p><h1>BFM Update<br class="mobile-only"> Tracker</h1><p class="hero-subtitle">Scheme-wise BFM update status</p></div>
-    <div class="datebox"><div class="date-icon">▣</div><div><span>Today</span><strong id="today">—</strong></div></div>
-  </section>
-  <section class="stats public-stats">
-    <div class="stat stat-total"><div class="stat-icon">☷</div><span>Total<br><b>(Functional)</b></span><strong id="total">—</strong></div>
-    <div class="stat stat-updated"><div class="stat-icon">✓</div><span>Updated<br><b>Today</b></span><strong id="updated">—</strong></div>
-    <div class="stat stat-pending"><div class="stat-icon">◷</div><span>Pending<br><b>Today</b></span><strong id="pending">—</strong></div>
-    <div class="stat stat-completion"><div class="stat-icon">▥</div><span>Completion<br><b>(of Functional)</b></span><strong id="completion">—</strong></div>
-  </section>
-  <section class="panel search-panel"><label for="search">Search scheme or person</label><div class="search-box"><span aria-hidden="true">⌕</span><input id="search" placeholder="Search scheme or person..." autocomplete="off"></div></section>
-  <section class="panel table-panel"><div id="cards" class="scheme-cards"></div><div class="desktop-table table-wrap"><table><thead id="thead"></thead><tbody id="tbody"><tr><td colspan="20" class="center muted">Loading…</td></tr></tbody></table></div></section>
-  <div id="pagination" class="pagination"></div>
-  <div class="last-updated">Last updated: <span id="lastUpdated">—</span> <button id="refresh" class="icon-btn" title="Refresh">↻</button></div>
-  <p id="message" class="muted"></p>
+
+<main class="public-main">
+<section class="daily-hero">
+  <div><div class="eyebrow">DAILY STATUS</div><h1 id="today">—</h1></div>
+  <div class="live-dot">● Live</div>
+</section>
+
+<section class="stats-grid">
+  <div class="stat-card"><span class="stat-icon">◉</span><div><small>Total</small><strong id="total">—</strong><em>Functional</em></div></div>
+  <div class="stat-card"><span class="stat-icon">✓</span><div><small>Updated Today</small><strong id="updated">—</strong><em>Today</em></div></div>
+  <div class="stat-card"><span class="stat-icon">○</span><div><small>Pending Today</small><strong id="pending">—</strong><em>Functional</em></div></div>
+  <div class="stat-card"><span class="stat-icon">%</span><div><small>Completion</small><strong id="completion">—</strong><em>of Functional</em></div></div>
+</section>
+
+<section class="search-box"><span>⌕</span><input id="search" placeholder="Search scheme or person..." autocomplete="off"></section>
+<div id="message" class="message"></div>
+<section id="schemeList" class="scheme-list"></section>
+<div class="pagination"><button id="prev">‹</button><span id="pageInfo">1 / 1</span><button id="next">›</button></div>
 </main>
-<script src="config.js"></script><script src="app.js"></script>
-</body></html>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
