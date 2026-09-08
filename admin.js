@@ -126,8 +126,8 @@ async function refresh(){
  $("#scheme").innerHTML=schemes.map(s=>`<option value="${s.id}">${esc(s.scheme_name)}</option>`).join("");
  if(schemes.length)updatePersonFields();else{$("#personName").textContent="—";$("#personType").textContent="—";$("#bfmStatus").textContent="—"}
  loadExistingStatus();
- const today=todayISO(),functionalSchemes=schemes.filter(s=>s.bfm_status==='Functional'),functionalIds=new Set(functionalSchemes.map(s=>s.id)),todays=updates.filter(x=>x.update_date===today&&functionalIds.has(x.scheme_id)),u=new Set(todays.filter(x=>x.status).map(x=>x.scheme_id)).size;
- $("#adminToday").textContent=fmtDate(today);$("#aTotal").textContent=functionalSchemes.length;$("#aUpdated").textContent=u;$("#aPending").textContent=Math.max(0,functionalSchemes.length-u);$("#aCompletion").textContent=functionalSchemes.length?Math.round(u/functionalSchemes.length*100)+"%":"0%";
+ const today=todayISO(),total=schemes.length,todayRows=updates.filter(x=>x.update_date===today),u=new Set(todayRows.filter(x=>x.status).map(x=>Number(x.scheme_id))).size;
+ $("#adminToday").textContent=fmtDate(today);$("#aTotal").textContent=total;$("#aUpdated").textContent=u;$("#aPending").textContent=Math.max(0,total-u);$("#aCompletion").textContent=total?Math.round(u/total*100)+"%":"0%";
  $("#recent").innerHTML=updates.map(x=>{const s=schemes.find(z=>z.id===x.scheme_id);return `<tr><td>${esc(s?.scheme_name||"Deleted scheme")}</td><td>${esc(s?.person_name||"")}</td><td>${esc(s?.person_type||"")}</td><td>${fmtDate(x.update_date)}</td><td>${x.status?'<span class="badge yes">✓</span>':'<span class="badge no">✕</span>'}</td></tr>`}).join("")||`<tr><td colspan="5" class="muted">No updates yet.</td></tr>`;
  $("#recentCards").innerHTML=updates.slice(0,10).map(x=>{const s=schemes.find(z=>z.id===x.scheme_id);return `<div class="mobile-record"><span class="record-status ${x.status?"r-yes":"r-no"}">${x.status?"✓":"✕"}</span><div><strong>${esc(s?.scheme_name||"Deleted scheme")}</strong><small>${esc(s?.person_name||"")} · ${esc(s?.person_type||"")}</small></div><span class="record-date">${fmtDate(x.update_date)}</span></div>`}).join("")||`<div class="muted">No updates yet.</div>`;
  $("#schemesList").innerHTML=schemes.map(s=>`<tr><td>${esc(s.scheme_name)}</td><td>${esc(s.person_type)}</td><td>${esc(s.person_name)}</td><td>${esc(s.bfm_status)}</td><td class="actions"><button type="button" class="secondary small-btn edit-scheme" data-id="${s.id}">Edit</button><button type="button" class="danger small-btn delete-scheme" data-id="${s.id}">Delete</button></td></tr>`).join("");
@@ -162,6 +162,10 @@ $("#logout").addEventListener("click",async()=>{
   showLogin();
 });
 
+const drawer=$("#adminDrawer"),drawerBackdrop=$("#adminDrawerBackdrop"),menuBtn=$("#adminMenu"),menuClose=$("#adminMenuClose");
+function closeDrawer(){drawer.classList.remove("open");drawerBackdrop.hidden=true;menuBtn?.setAttribute("aria-expanded","false")}
+function openDrawer(){drawer.classList.add("open");drawerBackdrop.hidden=false;menuBtn?.setAttribute("aria-expanded","true")}
+menuBtn?.addEventListener("click",()=>drawer.classList.contains("open")?closeDrawer():openDrawer());menuClose?.addEventListener("click",closeDrawer);drawerBackdrop?.addEventListener("click",closeDrawer);drawer?.querySelectorAll("a").forEach(a=>a.addEventListener("click",closeDrawer));
 (async function restoreSession(){
   const ok=await refreshAuthSession();
   if(!ok){
