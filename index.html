@@ -19,7 +19,7 @@
 <main class="container">
   <section class="hero public-hero">
     <div>
-      <p class="eyebrow">DAILY STATUS</p>
+      <p class="eyebrow">DAILY & MONTHLY STATUS</p>
       <h1 id="dashboardTitle">BFM Update Tracker</h1>
       <p class="muted">Scheme-wise BFM update status</p>
     </div>
@@ -29,18 +29,53 @@
     </div>
   </section>
 
-  <section class="stats compact-stats">
-    <div class="stat stat-total"><span>Total</span><strong id="total">—</strong></div>
-    <div class="stat stat-updated"><span>Updated</span><strong id="updated">—</strong></div>
-    <div class="stat stat-pending"><span>Pending</span><strong id="pending">—</strong></div>
-    <div class="stat stat-completion"><span>Completion</span><strong id="completion">—</strong></div>
+  <section class="month-bar panel">
+    <div>
+      <label for="monthSelect">Reporting month</label>
+      <select id="monthSelect" aria-label="Reporting month"></select>
+    </div>
+    <div class="month-help">Select any month with saved BFM records.</div>
   </section>
 
-  <section class="panel search-panel">
-    <label for="search">Search scheme or person</label>
+  <section class="stats compact-stats" id="stats">
+    <button class="stat stat-total stat-button" data-filter="all" type="button"><span>Total Schemes</span><strong id="total">—</strong><small>All schemes</small></button>
+    <button class="stat stat-updated stat-button" data-filter="updated" type="button"><span>Updated</span><strong id="updated">—</strong><small id="updatedLabel">Selected date</small></button>
+    <button class="stat stat-pending stat-button" data-filter="pending" type="button"><span>Pending</span><strong id="pending">—</strong><small id="pendingLabel">Selected date</small></button>
+    <button class="stat stat-completion stat-button" data-filter="completion" type="button"><span>Completion</span><strong id="completion">—</strong><small>Selected date</small></button>
+  </section>
+
+  <section class="mini-stats">
+    <button class="mini-stat functional" data-filter="functional" type="button"><span>Functional</span><strong id="functionalCount">—</strong></button>
+    <button class="mini-stat dysfunctional" data-filter="dysfunctional" type="button"><span>Dysfunctional</span><strong id="dysfunctionalCount">—</strong></button>
+    <button class="mini-stat month-stat" data-filter="month" type="button"><span>Month updates</span><strong id="monthUpdates">—</strong><small id="monthDays">—</small></button>
+  </section>
+
+  <section class="panel search-panel" id="schemeTablePanel">
+    <div class="section-head compact-head">
+      <div>
+        <p class="eyebrow">SCHEME LIST</p>
+        <h2 id="listTitle">All schemes</h2>
+        <p id="resultSummary" class="muted">Loading…</p>
+      </div>
+      <div class="table-actions">
+        <select id="statusFilter" aria-label="Filter BFM status">
+          <option value="all">All BFM status</option>
+          <option value="functional">Functional</option>
+          <option value="dysfunctional">Dysfunctional</option>
+        </select>
+        <select id="sortSelect" aria-label="Sort schemes">
+          <option value="name">Scheme A–Z</option>
+          <option value="name-desc">Scheme Z–A</option>
+          <option value="bfm">Functional first</option>
+          <option value="bfm-desc">Dysfunctional first</option>
+          <option value="updated-desc">Recently updated first</option>
+          <option value="updated-asc">Oldest update first</option>
+        </select>
+      </div>
+    </div>
     <div class="search-box">
       <span aria-hidden="true">⌕</span>
-      <input id="search" placeholder="Search scheme or person..." autocomplete="off">
+      <input id="search" placeholder="Search scheme or person..." autocomplete="off" aria-label="Search scheme or person">
     </div>
   </section>
 
@@ -49,17 +84,44 @@
     <div class="desktop-table table-wrap">
       <table>
         <thead id="thead"></thead>
-        <tbody id="tbody">
-          <tr><td colspan="20" class="center muted">Loading…</td></tr>
-        </tbody>
+        <tbody id="tbody"><tr><td colspan="20" class="center muted">Loading…</td></tr></tbody>
       </table>
     </div>
   </section>
 
   <div id="pagination" class="pagination"></div>
-  <div class="last-updated">Last updated: <span id="lastUpdated">—</span> <button id="refresh" class="icon-btn" title="Refresh">↻</button></div>
+
+  <section class="panel monthly-panel">
+    <div class="section-head compact-head">
+      <div>
+        <p class="eyebrow">MONTHLY OVERVIEW</p>
+        <h2>Update performance</h2>
+        <p class="muted">Unique schemes with at least one successful BFM update on each day.</p>
+      </div>
+    </div>
+    <div id="monthlyOverview" class="monthly-overview"></div>
+  </section>
+
+  <div class="last-updated">Last refreshed: <span id="lastUpdated">—</span> <button id="refresh" class="icon-btn" title="Refresh" type="button">↻</button></div>
   <p id="message" class="muted"></p>
 </main>
+
+<div id="schemeModal" class="modal" hidden aria-hidden="true">
+  <div class="modal-backdrop" data-close-modal></div>
+  <section class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
+    <p class="eyebrow">SCHEME DETAILS</p>
+    <div class="modal-title-row"><div><h2 id="modalTitle">—</h2><p id="modalPerson" class="muted">—</p></div><div id="modalBfm">—</div></div>
+    <div class="detail-grid">
+      <div><span>Person type</span><strong id="modalType">—</strong></div>
+      <div><span>Last update</span><strong id="modalLastUpdate">—</strong></div>
+      <div><span>Selected month</span><strong id="modalMonth">—</strong></div>
+      <div><span>Successful updates</span><strong id="modalMonthCount">—</strong></div>
+    </div>
+    <div class="history-title">Daily BFM history</div>
+    <div id="modalHistory" class="history-grid"></div>
+  </section>
+</div>
 
 <script src="config.js"></script>
 <script src="app.js"></script>
