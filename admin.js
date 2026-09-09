@@ -3,7 +3,7 @@ const $=s=>document.querySelector(s);
 const todayISO=()=>{const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const m=Object.fromEntries(p.map(x=>[x.type,x.value]));return `${m.year}-${m.month}-${m.day}`};
 const fmtDate=d=>new Intl.DateTimeFormat("en-IN",{day:"2-digit",month:"short",year:"numeric",timeZone:"Asia/Kolkata"}).format(new Date(`${d}T00:00:00`));
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let token=null,refreshToken=null,schemes=[],updates=[],selectedStatus=null,editingSchemeId=null;
+let token=null,refreshToken=null,schemes=[],updates=[],selectedStatus=null,editingSchemeId=null,bulkSelected=new Set();
 
 const SESSION_KEY="bfm_admin_session";
 
@@ -120,6 +120,45 @@ function resetSchemeForm(){editingSchemeId=null;$("#newScheme").value="";$("#new
 function updatePersonFields(){const s=schemes.find(x=>String(x.id)===$("#scheme").value);$("#personName").textContent=s?.person_name||"—";$("#personType").textContent=s?.person_type||"—";$("#bfmStatus").textContent=s?.bfm_status||"—"}
 function loadExistingStatus(){const id=Number($("#scheme").value),date=$("#date").value;resetStatus();if(!id||!date)return;const x=updates.find(v=>Number(v.scheme_id)===id&&v.update_date===date);if(x){selectedStatus=x.status;document.querySelectorAll(".status-btn").forEach(b=>b.classList.toggle("selected",b.dataset.status===String(x.status)));$("#saveMsg").textContent="Existing status loaded. You can change it."}else $("#saveMsg").textContent=""}
 
+
+function functionalSchemes(){return schemes.filter(s=>String(s.bfm_status).toLowerCase()==="functional")}
+function updateRowFor(schemeId,date){return updates.find(x=>Number(x.scheme_id)===Number(schemeId)&&x.update_date===date)}
+function bulkMonthISO(){return $("#bulkMonth").value||todayISO().slice(0,7)}
+function daysInMonth(ym){const [y,m]=ym.split("-").map(Number);return new Date(Date.UTC(y,m,0)).getUTCDate()}
+function dateISOFor(ym,day){return `${ym}-${String(day).padStart(2,"0")}`}
+function renderBulkCalendar(){
+ const ym=bulkMonthISO();
+ const [y,m]=ym.split("-").map(Number);const total=daysInMonth(ym);const first=(new Date(Date.UTC(y,m-1,1)).getUTCDay()+6)%7;
+ const existing=new Set(updates.filter(x=>x.update_date?.startsWith(ym)&&x.status&&Number(x.scheme_id)===Number($("#bulkScheme").value)).map(x=>x.update_date));
+ bulkSelected=new Set([...bulkSelected].filter(d=>d.startsWith(ym)));
+ const cells=[];for(let i=0;i<first;i++)cells.push('<span class="calendar-empty"></span>');
+ for(let day=1;day<=total;day++){const d=dateISOFor(ym,day),isExisting=existing.has(d),isSelected=bulkSelected.has(d);cells.push(`<button type="button" class="calendar-day ${isExisting?"saved":""} ${isSelected?"selected":""}" data-bulk-date="${d}" aria-pressed="${isSelected}"><span>${day}</span>${isExisting?'<small>✓</small>':isSelected?'<small>•</small>':''}</button>`)}
+ $("#bulkCalendar").innerHTML=cells.join("");
+ $("#bulkSelectedCount").textContent=`${bulkSelected.size} date${bulkSelected.size===1?"":"s"} selected`;
+ $("#bulkCalendar").querySelectorAll("[data-bulk-date]").forEach(b=>b.addEventListener("click",()=>{const d=b.dataset.bulkDate;if(bulkSelected.has(d))bulkSelected.delete(d);else bulkSelected.add(d);renderBulkCalendar()}));
+}
+function updateBulkPerson(){const s=schemes.find(x=>String(x.id)===$("#bulkScheme").value);$("#bulkPerson").textContent=s?.person_name||"—";$("#bulkBfm").textContent=s?.bfm_status||"—";}
+function initBulk(){
+ $("#bulkMonth").value=todayISO().slice(0,7);
+ $("#bulkScheme").addEventListener("change",()=>{bulkSelected=new Set();updateBulkPerson();renderBulkCalendar()});
+ $("#bulkMonth").addEventListener("change",()=>{bulkSelected=new Set();renderBulkCalendar()});
+ $("#bulkSelectAll").addEventListener("click",()=>{const ym=bulkMonthISO(),total=daysInMonth(ym);bulkSelected=new Set(Array.from({length:total},(_,i)=>dateISOFor(ym,i+1)));renderBulkCalendar()});
+ $("#bulkClear").addEventListener("click",()=>{bulkSelected=new Set();renderBulkCalendar()});
+ $("#bulkSave").addEventListener("click",saveBulkDates);
+}
+async function saveBulkDates(){
+ const schemeId=Number($("#bulkScheme").value),dates=[...bulkSelected].sort(),msg=$("#bulkMsg");
+ if(!schemeId){msg.textContent="Select a scheme first.";return}
+ if(!dates.length){msg.textContent="Select at least one date.";return}
+ const s=schemes.find(x=>Number(x.id)===schemeId);if(!s){msg.textContent="Scheme not found.";return}
+ const btn=$("#bulkSave");btn.disabled=true;msg.textContent="Saving selected dates…";
+ try{
+   const rows=dates.map(update_date=>({scheme_id:schemeId,update_date,status:true}));
+   await api("bfm_updates?on_conflict=scheme_id,update_date",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify(rows)});
+   msg.textContent=`Saved ${dates.length} date${dates.length===1?"":"s"} as Updated for ${s.scheme_name}.`;
+   bulkSelected=new Set();await refresh();renderBulkCalendar();
+ }catch(e){msg.textContent="Bulk save failed: "+e.message}finally{btn.disabled=false}
+}
 async function refresh(){
  schemes=await api("schemes?select=id,scheme_name,person_type,person_name,bfm_status&order=scheme_name");
  updates=await api("bfm_updates?select=scheme_id,update_date,status,created_at&order=created_at.desc&limit=50");
@@ -127,20 +166,41 @@ async function refresh(){
  if(schemes.length)updatePersonFields();else{$("#personName").textContent="—";$("#personType").textContent="—";$("#bfmStatus").textContent="—"}
  loadExistingStatus();
  const today=todayISO();
- const functionalSchemes=schemes.filter(s=>String(s.bfm_status).toLowerCase()==="functional");
- const functionalIds=new Set(functionalSchemes.map(s=>Number(s.id)));
+ const functionalList=functionalSchemes();
+ const functionalIds=new Set(functionalList.map(s=>Number(s.id)));
  const todayRows=updates.filter(x=>x.update_date===today);
  const functionalUpdated=new Set(todayRows.filter(x=>x.status&&functionalIds.has(Number(x.scheme_id))).map(x=>Number(x.scheme_id))).size;
- const functionalPending=Math.max(0,functionalSchemes.length-functionalUpdated);
+ const functionalTotal=functionalList.length;
+ const functionalPending=Math.max(0,functionalTotal-functionalUpdated);
+ const completion=functionalTotal?Math.round(functionalUpdated/functionalTotal*100):0;
  $("#adminToday").textContent=fmtDate(today);
+ $("#aTotal").textContent=functionalTotal;
  $("#aUpdated").textContent=functionalUpdated;
  $("#aPending").textContent=functionalPending;
- $("#recent").innerHTML=updates.map(x=>{const s=schemes.find(z=>z.id===x.scheme_id);return `<tr><td>${esc(s?.scheme_name||"Deleted scheme")}</td><td>${esc(s?.person_name||"")}</td><td>${esc(s?.person_type||"")}</td><td>${fmtDate(x.update_date)}</td><td>${x.status?'<span class="badge yes">✓</span>':'<span class="badge no">✕</span>'}</td></tr>`}).join("")||`<tr><td colspan="5" class="muted">No updates yet.</td></tr>`;
- $("#recentCards").innerHTML=updates.slice(0,10).map(x=>{const s=schemes.find(z=>z.id===x.scheme_id);return `<div class="mobile-record"><span class="record-status ${x.status?"r-yes":"r-no"}">${x.status?"✓":"✕"}</span><div><strong>${esc(s?.scheme_name||"Deleted scheme")}</strong><small>${esc(s?.person_name||"")} · ${esc(s?.person_type||"")}</small></div><span class="record-date">${fmtDate(x.update_date)}</span></div>`}).join("")||`<div class="muted">No updates yet.</div>`;
+ $("#aCompletion").textContent=completion+"%";
+ $("#aProgressLabel").textContent=`${functionalUpdated} of ${functionalTotal} updated`;
+ $("#aProgressBar").style.width=completion+"%";
+ $("#recent").innerHTML=updates.map(x=>{const s=schemes.find(z=>z.id===x.scheme_id);return `<tr><td>${esc(s?.scheme_name||"Deleted scheme")}</td><td>${esc(s?.person_name||"")}</td><td>${esc(s?.person_type||"")}</td><td>${fmtDate(x.update_date)}</td><td>${x.status?'<span class="badge yes">✓</span>':'<span class="badge no">✕</span>'}</td><td class="actions"><button type="button" class="secondary small-btn edit-update" data-scheme-id="${x.scheme_id}" data-date="${x.update_date}">Edit</button><button type="button" class="danger small-btn delete-update" data-scheme-id="${x.scheme_id}" data-date="${x.update_date}">Delete</button></td></tr>`}).join("")||`<tr><td colspan="6" class="muted">No updates yet.</td></tr>`;
+ $("#recentCards").innerHTML=updates.slice(0,10).map(x=>{const s=schemes.find(z=>z.id===x.scheme_id);return `<div class="mobile-record"><span class="record-status ${x.status?"r-yes":"r-no"}">${x.status?"✓":"✕"}</span><div><strong>${esc(s?.scheme_name||"Deleted scheme")}</strong><small>${esc(s?.person_name||"")} · ${esc(s?.person_type||"")} · ${fmtDate(x.update_date)}</small></div><div class="record-actions"><button type="button" class="secondary small-btn edit-update" data-scheme-id="${x.scheme_id}" data-date="${x.update_date}">Edit</button><button type="button" class="danger small-btn delete-update" data-scheme-id="${x.scheme_id}" data-date="${x.update_date}">Delete</button></div></div>`}).join("")||`<div class="muted">No updates yet.</div>`;
  $("#schemesList").innerHTML=schemes.map(s=>`<tr><td>${esc(s.scheme_name)}</td><td>${esc(s.person_type)}</td><td>${esc(s.person_name)}</td><td>${esc(s.bfm_status)}</td><td class="actions"><button type="button" class="secondary small-btn edit-scheme" data-id="${s.id}">Edit</button><button type="button" class="danger small-btn delete-scheme" data-id="${s.id}">Delete</button></td></tr>`).join("");
  $("#schemeCards").innerHTML=schemes.map(s=>`<div class="mobile-record scheme-record"><div><strong>${esc(s.scheme_name)}</strong><small>${esc(s.person_name)} · ${esc(s.person_type)} · ${esc(s.bfm_status)}</small></div><div class="record-actions"><button type="button" class="secondary small-btn edit-scheme" data-id="${s.id}">Edit</button><button type="button" class="danger small-btn delete-scheme" data-id="${s.id}">Delete</button></div></div>`).join("");
+ $("#bulkScheme").innerHTML=schemes.map(s=>`<option value="${s.id}">${esc(s.scheme_name)}</option>`).join("");
+ if(schemes.length){updateBulkPerson();renderBulkCalendar()}else{$("#bulkPerson").textContent="—";$("#bulkBfm").textContent="—"}
+ document.querySelectorAll(".edit-update").forEach(b=>b.addEventListener("click",()=>editUpdate(Number(b.dataset.schemeId),b.dataset.date)));
+ document.querySelectorAll(".delete-update").forEach(b=>b.addEventListener("click",()=>deleteUpdate(Number(b.dataset.schemeId),b.dataset.date)));
  document.querySelectorAll(".edit-scheme").forEach(b=>b.addEventListener("click",()=>startEdit(Number(b.dataset.id))));
  document.querySelectorAll(".delete-scheme").forEach(b=>b.addEventListener("click",()=>deleteScheme(Number(b.dataset.id))));
+}
+
+function editUpdate(schemeId,date){
+ const s=schemes.find(x=>Number(x.id)===schemeId);if(!s)return;
+ $("#scheme").value=String(schemeId);$("#date").value=date;updatePersonFields();loadExistingStatus();
+ $("#saveMsg").textContent="Editing selected update. Choose Updated/Not Updated and save.";
+ document.querySelector("#updatePanel")?.scrollIntoView({behavior:"smooth",block:"start"});
+}
+async function deleteUpdate(schemeId,date){
+ const s=schemes.find(x=>Number(x.id)===schemeId);if(!confirm(`Delete the update for "${s?.scheme_name||"this scheme"}" on ${fmtDate(date)}?`))return;
+ try{await api(`bfm_updates?scheme_id=eq.${schemeId}&update_date=eq.${date}`,{method:"DELETE"});await refresh()}catch(e){$("#saveMsg").textContent="Could not delete update: "+e.message}
 }
 function startEdit(id){const s=schemes.find(x=>x.id===id);if(!s)return;editingSchemeId=id;$("#newScheme").value=s.scheme_name;$("#newPersonType").value=s.person_type;$("#newPersonName").value=s.person_name;$("#newBfmStatus").value=s.bfm_status||"Functional";$("#schemeSubmit").textContent="Save Changes";$("#cancelEdit").hidden=false;$("#schemeMsg").textContent="Editing selected scheme.";$("#newScheme").focus()}
 async function deleteScheme(id){const s=schemes.find(x=>x.id===id);if(!s)return;if(!confirm(`Delete "${s.scheme_name}"?\n\nExisting BFM records may prevent deletion.`))return;try{await api(`schemes?id=eq.${id}`,{method:"DELETE"});$("#schemeMsg").textContent="Scheme deleted.";if(editingSchemeId===id)resetSchemeForm();await refresh()}catch(e){$("#schemeMsg").textContent="Could not delete. Existing BFM records may be linked to this scheme."}}
@@ -169,6 +229,8 @@ $("#logout").addEventListener("click",async()=>{
   showLogin();
 });
 
+initBulk();
+
 const drawer=$("#adminDrawer"),drawerBackdrop=$("#adminDrawerBackdrop"),menuBtn=$("#adminMenu"),menuClose=$("#adminMenuClose");
 function closeDrawer(){drawer.classList.remove("open");drawerBackdrop.hidden=true;menuBtn?.setAttribute("aria-expanded","false")}
 function openDrawer(){drawer.classList.add("open");drawerBackdrop.hidden=false;menuBtn?.setAttribute("aria-expanded","true")}
@@ -195,5 +257,6 @@ $("#date").addEventListener("change",loadExistingStatus);
 $("#updateForm").addEventListener("submit",async e=>{e.preventDefault();if(selectedStatus===null){$("#saveMsg").textContent="Select ✓ or ✕ first.";return}try{await api("bfm_updates?on_conflict=scheme_id,update_date",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({scheme_id:Number($("#scheme").value),update_date:$("#date").value,status:selectedStatus})});$("#saveMsg").textContent="Saved successfully.";resetStatus();await refresh()}catch(err){$("#saveMsg").textContent="Save failed: "+err.message}});
 $("#schemeForm").addEventListener("submit",async e=>{e.preventDefault();const name=$("#newScheme").value.trim(),type=$("#newPersonType").value,person=$("#newPersonName").value.trim(),bfmStatus=$("#newBfmStatus").value;if(!name||!person)return;try{if(editingSchemeId){await api(`schemes?id=eq.${editingSchemeId}`,{method:"PATCH",body:JSON.stringify({scheme_name:name,person_type:type,person_name:person,bfm_status:bfmStatus})});$("#schemeMsg").textContent="Scheme updated."}else{await api("schemes",{method:"POST",body:JSON.stringify({scheme_name:name,person_type:type,person_name:person,bfm_status:bfmStatus})});$("#schemeMsg").textContent="Scheme added."}resetSchemeForm();await refresh()}catch(err){$("#schemeMsg").textContent="Could not save: "+err.message}});
 $("#cancelEdit").addEventListener("click",()=>{resetSchemeForm();$("#schemeMsg").textContent=""});
+$$('[data-admin-filter]').forEach(b=>b.addEventListener("click",()=>{const filter=b.dataset.adminFilter;const anchor=filter==="functional"?"#managePanel":"#recentPanel";document.querySelector(anchor)?.scrollIntoView({behavior:"smooth",block:"start"});if(filter==="functional"){$("#schemeForm")?.scrollIntoView({behavior:"smooth",block:"start"})}}));
 $("#refresh").addEventListener("click",()=>refresh().catch(e=>$("#saveMsg").textContent="Refresh failed: "+e.message));
 $("#addSchemeTop").addEventListener("click",()=>{resetSchemeForm();$("#schemeMsg").textContent="";$("#newScheme").focus();window.scrollTo({top:document.querySelector(".scheme-form").offsetTop-20,behavior:"smooth"})});

@@ -19,7 +19,7 @@
 <div id="adminDrawerBackdrop" class="drawer-backdrop" hidden></div>
 <aside id="adminDrawer" class="admin-drawer" aria-label="Admin navigation">
   <div class="drawer-head"><strong>Admin Menu</strong><button id="adminMenuClose" type="button" class="drawer-close" aria-label="Close menu">×</button></div>
-  <nav><a href="#updatePanel">Daily Update</a><a href="#recentPanel">Recent Updates</a><a href="#managePanel">Manage Schemes</a></nav>
+  <nav><a href="#adminDashboard">Dashboard</a><a href="#updatePanel">Daily Update</a><a href="#bulkPanel">Bulk Date Update</a><a href="#recentPanel">Recent Updates</a><a href="#managePanel">Manage Schemes</a></nav>
 </aside>
 
 <main class="container">
@@ -29,9 +29,16 @@
   </section>
 
   <section id="adminApp" hidden>
-    <section class="admin-welcome"><div><p class="eyebrow">ADMIN DASHBOARD</p><h1>Daily BFM Administration</h1><p class="muted">Manage updates and scheme assignments from your phone or desktop.</p></div><div class="admin-date"><span>📅 Today</span><strong id="adminToday">—</strong></div></section>
-    <section class="stats compact-stats functional-only-stats">
-      <div class="stat stat-updated"><span>Functional Updates</span><strong id="aUpdated">—</strong></div><div class="stat stat-pending"><span>Pending Functional</span><strong id="aPending">—</strong></div>
+    <section id="adminDashboard" class="admin-welcome"><div><p class="eyebrow">ADMIN DASHBOARD</p><h1>Daily BFM Administration</h1><p class="muted">Manage updates and scheme assignments from your phone or desktop.</p></div><div class="admin-date"><span>📅 Today</span><strong id="adminToday">—</strong></div></section>
+    <section class="stats admin-stats functional-only-stats">
+      <button class="stat admin-stat" type="button" data-admin-filter="functional"><span>Functional Schemes</span><strong id="aTotal">—</strong><small>Current schemes</small></button>
+      <button class="stat stat-updated admin-stat" type="button" data-admin-filter="updated"><span>Updated Today</span><strong id="aUpdated">—</strong><small>Functional only</small></button>
+      <button class="stat stat-pending admin-stat" type="button" data-admin-filter="pending"><span>Pending Today</span><strong id="aPending">—</strong><small>Functional only</small></button>
+      <div class="stat stat-completion admin-stat"><span>Completion</span><strong id="aCompletion">—</strong><small>Functional only</small></div>
+    </section>
+    <section class="admin-progress panel">
+      <div class="progress-head"><strong>Today's functional update progress</strong><span id="aProgressLabel">—</span></div>
+      <div class="progress-track"><i id="aProgressBar" style="width:0%"></i></div>
     </section>
 
     <section id="updatePanel" class="panel action-panel">
@@ -44,7 +51,24 @@
       </div></form><div class="hint">ⓘ Selecting a date loads the existing status, if any.</div>
     </section>
 
-    <section id="recentPanel" class="panel"><div class="section-head"><div class="section-heading"><span class="section-icon">◴</span><div><h2>Recent Updates</h2><p class="muted">Latest saved records.</p></div></div><button id="refresh" class="secondary" type="button">↻ Refresh</button></div><div id="recentCards" class="admin-mobile-list"></div><div class="desktop-table table-wrap"><table><thead><tr><th>Scheme</th><th>Person</th><th>Type</th><th>Date</th><th>Status</th></tr></thead><tbody id="recent"></tbody></table></div></section>
+    <section id="bulkPanel" class="panel bulk-panel">
+      <div class="section-head">
+        <div class="section-heading"><span class="section-icon">▦</span><div><h2>Bulk Date Update</h2><p class="muted">Select all dates this Jalmitra updated and save them together.</p></div></div>
+      </div>
+      <div class="bulk-controls">
+        <div><label for="bulkScheme">Scheme</label><select id="bulkScheme"></select></div>
+        <div><label for="bulkMonth">Month</label><input id="bulkMonth" type="month"></div>
+      </div>
+      <div class="bulk-person"><span>Jalmitra / Person</span><strong id="bulkPerson">—</strong><span>BFM</span><strong id="bulkBfm">—</strong></div>
+      <div class="bulk-toolbar"><button id="bulkSelectAll" class="secondary" type="button">☑ Select All Dates</button><button id="bulkClear" class="secondary" type="button">☐ Clear All</button><span id="bulkSelectedCount" class="muted">0 dates selected</span></div>
+      <div class="calendar-head"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+      <div id="bulkCalendar" class="bulk-calendar"></div>
+      <button id="bulkSave" class="save-btn" type="button">▣ &nbsp; SAVE SELECTED DATES</button>
+      <p id="bulkMsg" class="form-message"></p>
+      <div class="hint">ⓘ Green dates already have a saved Updated record. Selecting a date saves it as Updated.</div>
+    </section>
+
+    <section id="recentPanel" class="panel"><div class="section-head"><div class="section-heading"><span class="section-icon">◴</span><div><h2>Recent Updates</h2><p class="muted">Latest saved records.</p></div></div><button id="refresh" class="secondary" type="button">↻ Refresh</button></div><div id="recentCards" class="admin-mobile-list"></div><div class="desktop-table table-wrap"><table><thead><tr><th>Scheme</th><th>Person</th><th>Type</th><th>Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="recent"></tbody></table></div></section>
 
     <section id="managePanel" class="panel"><div class="section-head"><div class="section-heading"><span class="section-icon">▦</span><div><h2>Manage Schemes</h2><p class="muted">One assigned person per scheme.</p></div></div><button id="addSchemeTop" class="primary" type="button">＋ Add New Scheme</button></div>
       <form id="schemeForm" class="grid2 scheme-form"><div><label for="newScheme">Scheme Name</label><input id="newScheme" required placeholder="e.g. Uparcharia PWSS"></div><div><label for="newPersonType">Person Type</label><select id="newPersonType" required><option value="Swajal Mitra">Swajal Mitra</option><option value="Jal Sahayak">Jal Sahayak</option></select></div><div><label for="newPersonName">Person Name</label><input id="newPersonName" required placeholder="e.g. Kiran Rabha"></div><div><label for="newBfmStatus">BFM Status</label><select id="newBfmStatus" required><option value="Functional">Functional</option><option value="Dysfunctional">Dysfunctional</option></select></div><div class="form-actions"><button id="schemeSubmit" class="primary" type="submit">＋ Add Scheme</button><button id="cancelEdit" class="secondary" type="button" hidden>Cancel</button></div><div class="full-width"><span id="schemeMsg" class="muted"></span></div></form>

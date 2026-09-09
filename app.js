@@ -48,8 +48,8 @@ function render(){
  $$('[data-open-scheme]').forEach(b=>b.addEventListener('click',()=>openScheme(Number(b.dataset.openScheme))));
 }
 function renderStats(){
- const date=getSelectedDate(),functionalSchemes=schemes.filter(s=>s.bfm_status==="Functional"),functional=functionalSchemes.length,dysfunctional=schemes.filter(s=>s.bfm_status==="Dysfunctional").length,ids=successfulIdsForDate(date),updated=functionalSchemes.filter(s=>ids.has(Number(s.id))).length,total=functional,pending=Math.max(0,total-updated),functionalIds=new Set(functionalSchemes.map(s=>Number(s.id))),monthSuccess=Array.from(successfulIdsForMonth()).filter(id=>functionalIds.has(id)).length,days=monthDays(selectedMonth).length;
- $("#total").textContent=total;$("#updated").textContent=updated;$("#pending").textContent=pending;$("#completion").textContent=total?Math.round(updated/total*100)+"%":"0%";$("#functionalCount").textContent=functional;$("#dysfunctionalCount").textContent=dysfunctional;$("#monthUpdates").textContent=monthSuccess;$("#monthDays").textContent=`schemes with ≥1 update in ${monthLabel(selectedMonth)}`;$("#updatedLabel").textContent=fmtShortDate(date);$("#pendingLabel").textContent=fmtShortDate(date);
+ const date=getSelectedDate(),functionalSchemes=schemes.filter(s=>s.bfm_status==="Functional"),total=functionalSchemes.length,ids=successfulIdsForDate(date),updated=functionalSchemes.filter(s=>ids.has(Number(s.id))).length,pending=Math.max(0,total-updated);
+ $("#total").textContent=total;$("#updated").textContent=updated;$("#pending").textContent=pending;$("#completion").textContent=total?Math.round(updated/total*100)+"%":"0%";$("#updatedLabel").textContent=fmtShortDate(date);$("#pendingLabel").textContent=fmtShortDate(date);
  $$(".stat-button,.mini-stat").forEach(b=>b.classList.toggle("active",b.dataset.filter===selectedFilter));
 }
 function renderMonthlyOverview(){
