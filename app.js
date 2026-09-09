@@ -25,8 +25,8 @@ function filteredSchemes(){
  const date=getSelectedDate(),todayIds=successfulIdsForDate(date),monthIds=successfulIdsForMonth();
  let list=schemes.filter(s=>`${s.scheme_name} ${s.person_name}`.toLowerCase().includes(search));
  if(statusFilter!=="all")list=list.filter(s=>s.bfm_status.toLowerCase()===statusFilter);
- if(selectedFilter==="updated")list=list.filter(s=>todayIds.has(Number(s.id)));
- if(selectedFilter==="pending")list=list.filter(s=>!todayIds.has(Number(s.id)));
+ if(selectedFilter==="updated")list=list.filter(s=>s.bfm_status==="Functional"&&todayIds.has(Number(s.id)));
+ if(selectedFilter==="pending")list=list.filter(s=>s.bfm_status==="Functional"&&!todayIds.has(Number(s.id)));
  if(selectedFilter==="functional")list=list.filter(s=>s.bfm_status==="Functional");
  if(selectedFilter==="dysfunctional")list=list.filter(s=>s.bfm_status==="Dysfunctional");
  if(selectedFilter==="month")list=list.filter(s=>monthIds.has(Number(s.id)));
@@ -48,7 +48,7 @@ function render(){
  $$('[data-open-scheme]').forEach(b=>b.addEventListener('click',()=>openScheme(Number(b.dataset.openScheme))));
 }
 function renderStats(){
- const date=getSelectedDate(),functional=schemes.filter(s=>s.bfm_status==="Functional").length,dysfunctional=schemes.filter(s=>s.bfm_status==="Dysfunctional").length,ids=successfulIdsForDate(date),updated=schemes.filter(s=>ids.has(Number(s.id))).length,total=schemes.length,pending=Math.max(0,total-updated),monthSuccess=successfulIdsForMonth().size,days=monthDays(selectedMonth).length;
+ const date=getSelectedDate(),functionalSchemes=schemes.filter(s=>s.bfm_status==="Functional"),functional=functionalSchemes.length,dysfunctional=schemes.filter(s=>s.bfm_status==="Dysfunctional").length,ids=successfulIdsForDate(date),updated=functionalSchemes.filter(s=>ids.has(Number(s.id))).length,total=functional,pending=Math.max(0,total-updated),functionalIds=new Set(functionalSchemes.map(s=>Number(s.id))),monthSuccess=Array.from(successfulIdsForMonth()).filter(id=>functionalIds.has(id)).length,days=monthDays(selectedMonth).length;
  $("#total").textContent=total;$("#updated").textContent=updated;$("#pending").textContent=pending;$("#completion").textContent=total?Math.round(updated/total*100)+"%":"0%";$("#functionalCount").textContent=functional;$("#dysfunctionalCount").textContent=dysfunctional;$("#monthUpdates").textContent=monthSuccess;$("#monthDays").textContent=`schemes with ≥1 update in ${monthLabel(selectedMonth)}`;$("#updatedLabel").textContent=fmtShortDate(date);$("#pendingLabel").textContent=fmtShortDate(date);
  $$(".stat-button,.mini-stat").forEach(b=>b.classList.toggle("active",b.dataset.filter===selectedFilter));
 }
